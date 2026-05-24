@@ -1,6 +1,7 @@
 import Image, { type ImageProps } from "next/image";
 import { Button } from "@repo/ui/button";
 import styles from "./page.module.css";
+import {SignIn} from '../components/sign-in';
 
 type Props = Omit<ImageProps, "src"> & {
   srcLight: string;
@@ -21,6 +22,7 @@ const ThemeImage = (props: Props) => {
 export default function Home() {
   return (
     <div className={styles.page}>
+      <SignIn />
       <main className={styles.main}>
         <ThemeImage
           className={styles.logo}

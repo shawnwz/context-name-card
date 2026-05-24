@@ -157,3 +157,20 @@ Learn more about the power of Turborepo:
 - [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
 - [Configuration Options](https://turborepo.dev/docs/reference/configuration)
 - [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+
+
+## Database push
+pnpm --filter database db:push
+
+## The database migration workflow
+
+1. Edit schema.prisma (add/change models)
+2. Run migrate:dev → generates a new SQL migration file  `pnpm --filter database migrate:dev`
+3. The migration files in prisma/migrations/ are the history; the schema is the current state
+
+
+## To reset database
+- migrate:reset drops and recreates the DB clean (dev only)
+```
+pnpm --filter database migrate:reset
+```
