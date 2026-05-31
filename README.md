@@ -174,3 +174,9 @@ pnpm --filter database db:push
 ```
 pnpm --filter database migrate:reset
 ```
+
+## Run the db seed manually
+
+```
+  pnpm --filter @repo/database exec dotenv -e ../../.env -- prisma db seed
+```

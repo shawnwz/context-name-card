@@ -15,11 +15,12 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
-  // Optional for WebAuthn support
   Authenticator Authenticator[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  identities       Identity[]
+  identityContexts IdentityContext[]
 }
 
 model Account {
@@ -75,4 +76,38 @@ model Authenticator {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, credentialID])
+}
+
+model IdentityContext {
+  id     String  @id @default(cuid())
+  name   String
+  userId String?
+
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  identities Identity[]
+
+  @@unique([userId, name])
+}
+
+model Identity {
+  id        String   @id @default(cuid())
+  userId    String
+  contextId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  validFrom DateTime
+  validTo   DateTime?
+
+  givenName           String
+  familyName          String
+  additionalGivenName String?
+  secondaryFamilyName String?
+  displayName         String
+
+  image String?
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  context IdentityContext @relation(fields: [contextId], references: [id])
+
+  @@unique([userId, contextId])
 }

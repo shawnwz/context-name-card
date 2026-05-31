@@ -26,6 +26,9 @@
   "dependencies": {
     "@prisma/client": "^6.8.2"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
@@ -33,6 +36,7 @@
     "eslint": "^9.39.1",
     "prisma": "^6.8.2",
     "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
     "typescript": "5.9.2"
   }
 }
