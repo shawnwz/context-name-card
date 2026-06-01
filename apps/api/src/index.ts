@@ -1,8 +1,20 @@
 import Fastify from "fastify";
 import { prisma } from "@repo/database";
+import { authenticate } from "./plugins/authenticate.js";
+import { identityContextRoutes } from "./routes/identityContexts.js";
+import { identityRoutes } from "./routes/identities.js";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    userId: string;
+  }
+}
 
 const app = Fastify({ logger: true });
 
+app.decorateRequest("userId", "");
+
+// Public routes
 app.get("/health", async () => {
   return { status: "ok" };
 });
@@ -17,6 +29,13 @@ app.get<{ Params: { id: string } }>("/users/:id", async (request, reply) => {
   }
 
   return user;
+});
+
+// Protected routes — require a valid Auth.js session token as Bearer token
+app.register(async (protectedApp) => {
+  protectedApp.addHook("preHandler", authenticate);
+  protectedApp.register(identityContextRoutes);
+  protectedApp.register(identityRoutes);
 });
 
 const start = async () => {

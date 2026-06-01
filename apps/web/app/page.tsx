@@ -1,104 +1,92 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
-import {SignIn} from '../components/sign-in';
+import { auth } from "../auth";
+import { SignIn } from "../components/sign-in";
+import { CreateIdentityDialog } from "../components/create-identity-dialog";
+import { EditIdentityDialog } from "../components/edit-identity-dialog";
+import { DeleteIdentityButton } from "../components/delete-identity-button";
+import { prisma } from "@repo/database";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
+export default async function Home() {
+  const session = await auth();
 
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
-
-  return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
-
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <SignIn />
-      <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.dev/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
+  if (!session?.user) {
+    return (
+      <main className="flex flex-col items-center justify-center min-h-[calc(100svh-56px)] gap-4 p-8">
+        <SignIn />
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.dev?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.dev →
-        </a>
-      </footer>
-    </div>
+    );
+  }
+
+  const [systemContexts, userContexts, identities] = await Promise.all([
+    prisma.identityContext.findMany({ where: { userId: null }, orderBy: { name: "asc" } }),
+    prisma.identityContext.findMany({ where: { userId: session.user.id }, orderBy: { name: "asc" } }),
+    prisma.identity.findMany({
+      where: { userId: session.user.id },
+      include: { context: true },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  const usedContextIds = new Set(identities.map((i) => i.contextId));
+  const availableSystemContexts = systemContexts.filter((c) => !usedContextIds.has(c.id));
+  const availableUserContexts = userContexts.filter((c) => !usedContextIds.has(c.id));
+
+  return (
+    <main className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Identities</h1>
+        <CreateIdentityDialog
+          userId={session.user.id}
+          systemContexts={availableSystemContexts}
+          userContexts={availableUserContexts}
+        />
+      </div>
+
+      {identities.length === 0 ? (
+        <p className="text-sm text-black/40 dark:text-white/40">
+          No identities yet. Create one to get started.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {identities.map((identity) => (
+            <li
+              key={identity.id}
+              className="border border-black/8 dark:border-white/10 rounded-xl p-4 flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{identity.displayName}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
+                    {identity.context.name}
+                  </span>
+                  <EditIdentityDialog
+                    identity={{
+                      id: identity.id,
+                      contextName: identity.context.name,
+                      givenName: identity.givenName,
+                      familyName: identity.familyName,
+                      additionalGivenName: identity.additionalGivenName,
+                      secondaryFamilyName: identity.secondaryFamilyName,
+                      displayName: identity.displayName,
+                      validFrom: identity.validFrom.toISOString(),
+                      validTo: identity.validTo?.toISOString() ?? null,
+                      image: identity.image,
+                    }}
+                  />
+                  <DeleteIdentityButton identityId={identity.id} />
+                </div>
+              </div>
+              <span className="text-sm text-black/60 dark:text-white/60">
+                {identity.givenName} {identity.additionalGivenName ?? ""} {identity.familyName}
+                {identity.secondaryFamilyName ? ` (${identity.secondaryFamilyName})` : ""}
+              </span>
+              <span className="text-xs text-black/40 dark:text-white/40">
+                Valid from {identity.validFrom.toLocaleDateString()}
+                {identity.validTo ? ` · until ${identity.validTo.toLocaleDateString()}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
   );
 }
