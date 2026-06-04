@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import multipart from "@fastify/multipart";
 import { prisma } from "@repo/database";
 import { authenticate } from "./plugins/authenticate.js";
 import { identityContextRoutes } from "./routes/identityContexts.js";
@@ -13,6 +14,12 @@ declare module "fastify" {
 const app = Fastify({ logger: true });
 
 app.decorateRequest("userId", "");
+app.register(multipart, {
+  limits: {
+    fileSize: 2 * 1024 * 1024,
+    files: 1,
+  },
+});
 
 // Public routes
 app.get("/health", async () => {

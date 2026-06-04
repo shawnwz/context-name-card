@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 
 export type EditableIdentity = {
   id: string;
@@ -21,7 +22,8 @@ type Props = { identity: EditableIdentity };
 const inputClass =
   "w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/30 dark:placeholder:text-white/30";
 
-const labelClass = "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
+const labelClass =
+  "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
 
 function toDateInput(iso: string | null): string {
   if (!iso) return "";
@@ -47,9 +49,13 @@ export function EditIdentityDialog({ identity }: Props) {
     const form = new FormData(e.currentTarget);
 
     const validTo = (form.get("validTo") as string).trim();
-    const additionalGivenName = (form.get("additionalGivenName") as string).trim();
-    const secondaryFamilyName = (form.get("secondaryFamilyName") as string).trim();
-    const image = (form.get("image") as string).trim();
+    const additionalGivenName = (
+      form.get("additionalGivenName") as string
+    ).trim();
+    const secondaryFamilyName = (
+      form.get("secondaryFamilyName") as string
+    ).trim();
+    const headImage = form.get("headImage");
 
     const res = await fetch(`/api/proxy/identities/${identity.id}`, {
       method: "PATCH",
@@ -62,7 +68,6 @@ export function EditIdentityDialog({ identity }: Props) {
         additionalGivenName: additionalGivenName || null,
         secondaryFamilyName: secondaryFamilyName || null,
         validTo: validTo || null,
-        image: image || null,
       }),
     });
 
@@ -71,6 +76,18 @@ export function EditIdentityDialog({ identity }: Props) {
       setError(data.error ?? "Failed to update identity");
       setLoading(false);
       return;
+    }
+
+    if (headImage instanceof File && headImage.size > 0) {
+      try {
+        await uploadIdentityHeadImage(identity.id, headImage);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to upload head image",
+        );
+        setLoading(false);
+        return;
+      }
     }
 
     handleClose();
@@ -112,7 +129,6 @@ export function EditIdentityDialog({ identity }: Props) {
             {/* Form */}
             <form onSubmit={handleSubmit} className="overflow-y-auto flex-1">
               <div className="px-6 py-4 flex flex-col gap-4">
-
                 {/* Name fields */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -191,18 +207,19 @@ export function EditIdentityDialog({ identity }: Props) {
 
                 {/* Image */}
                 <div>
-                  <label className={labelClass}>Image URL</label>
+                  <label className={labelClass}>Head image</label>
                   <input
-                    name="image"
-                    type="url"
-                    defaultValue={identity.image ?? ""}
-                    placeholder="https://…"
+                    name="headImage"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
                     className={inputClass}
                   />
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-red-500 dark:text-red-400">
+                    {error}
+                  </p>
                 )}
               </div>
 

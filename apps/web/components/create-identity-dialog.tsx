@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 
 type Context = { id: string; name: string };
 
@@ -14,15 +15,20 @@ type Props = {
 const inputClass =
   "w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/30 dark:placeholder:text-white/30";
 
-const labelClass = "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
+const labelClass =
+  "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
 
-export function CreateIdentityDialog({ userId, systemContexts, userContexts }: Props) {
+export function CreateIdentityDialog({
+  userId,
+  systemContexts,
+  userContexts,
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contextSelection, setContextSelection] = useState<string>(
-    systemContexts[0]?.id ?? userContexts[0]?.id ?? "__new__"
+    systemContexts[0]?.id ?? userContexts[0]?.id ?? "__new__",
   );
 
   function handleClose() {
@@ -58,9 +64,13 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
     }
 
     const validTo = (form.get("validTo") as string).trim();
-    const additionalGivenName = (form.get("additionalGivenName") as string).trim();
-    const secondaryFamilyName = (form.get("secondaryFamilyName") as string).trim();
-    const image = (form.get("image") as string).trim();
+    const additionalGivenName = (
+      form.get("additionalGivenName") as string
+    ).trim();
+    const secondaryFamilyName = (
+      form.get("secondaryFamilyName") as string
+    ).trim();
+    const headImage = form.get("headImage");
 
     const res = await fetch("/api/proxy/identities", {
       method: "POST",
@@ -75,7 +85,6 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
         ...(additionalGivenName && { additionalGivenName }),
         ...(secondaryFamilyName && { secondaryFamilyName }),
         ...(validTo && { validTo }),
-        ...(image && { image }),
       }),
     });
 
@@ -84,6 +93,19 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
       setError(data.error ?? "Failed to create identity");
       setLoading(false);
       return;
+    }
+
+    if (headImage instanceof File && headImage.size > 0) {
+      try {
+        await uploadIdentityHeadImage(data.id, headImage);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to upload head image",
+        );
+        setLoading(false);
+        router.refresh();
+        return;
+      }
     }
 
     handleClose();
@@ -120,7 +142,6 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
             {/* Form */}
             <form onSubmit={handleSubmit} className="overflow-y-auto flex-1">
               <div className="px-6 py-4 flex flex-col gap-4">
-
                 {/* Context */}
                 <div>
                   <label className={labelClass}>Context</label>
@@ -132,14 +153,18 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
                     {systemContexts.length > 0 && (
                       <optgroup label="Standard">
                         {systemContexts.map((ctx) => (
-                          <option key={ctx.id} value={ctx.id}>{ctx.name}</option>
+                          <option key={ctx.id} value={ctx.id}>
+                            {ctx.name}
+                          </option>
                         ))}
                       </optgroup>
                     )}
                     {userContexts.length > 0 && (
                       <optgroup label="Custom">
                         {userContexts.map((ctx) => (
-                          <option key={ctx.id} value={ctx.id}>{ctx.name}</option>
+                          <option key={ctx.id} value={ctx.id}>
+                            {ctx.name}
+                          </option>
                         ))}
                       </optgroup>
                     )}
@@ -164,25 +189,53 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>Given name *</label>
-                    <input name="givenName" type="text" required placeholder="Jane" className={inputClass} />
+                    <input
+                      name="givenName"
+                      type="text"
+                      required
+                      placeholder="Jane"
+                      className={inputClass}
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>Family name *</label>
-                    <input name="familyName" type="text" required placeholder="Doe" className={inputClass} />
+                    <input
+                      name="familyName"
+                      type="text"
+                      required
+                      placeholder="Doe"
+                      className={inputClass}
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>Additional given name</label>
-                    <input name="additionalGivenName" type="text" placeholder="Marie" className={inputClass} />
+                    <input
+                      name="additionalGivenName"
+                      type="text"
+                      placeholder="Marie"
+                      className={inputClass}
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>Secondary family name</label>
-                    <input name="secondaryFamilyName" type="text" placeholder="Smith" className={inputClass} />
+                    <input
+                      name="secondaryFamilyName"
+                      type="text"
+                      placeholder="Smith"
+                      className={inputClass}
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className={labelClass}>Display name *</label>
-                  <input name="displayName" type="text" required placeholder="Jane Doe" className={inputClass} />
+                  <input
+                    name="displayName"
+                    type="text"
+                    required
+                    placeholder="Jane Doe"
+                    className={inputClass}
+                  />
                 </div>
 
                 {/* Validity */}
@@ -205,12 +258,19 @@ export function CreateIdentityDialog({ userId, systemContexts, userContexts }: P
 
                 {/* Optional */}
                 <div>
-                  <label className={labelClass}>Image URL</label>
-                  <input name="image" type="url" placeholder="https://…" className={inputClass} />
+                  <label className={labelClass}>Head image</label>
+                  <input
+                    name="headImage"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className={inputClass}
+                  />
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+                  <p className="text-sm text-red-500 dark:text-red-400">
+                    {error}
+                  </p>
                 )}
               </div>
 
