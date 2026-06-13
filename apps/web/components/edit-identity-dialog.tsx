@@ -15,6 +15,8 @@ export type EditableIdentity = {
   validFrom: string;
   validTo: string | null;
   image: string | null;
+  email: string | null;
+  description: string | null;
 };
 
 type Props = { identity: EditableIdentity };
@@ -49,12 +51,10 @@ export function EditIdentityDialog({ identity }: Props) {
     const form = new FormData(e.currentTarget);
 
     const validTo = (form.get("validTo") as string).trim();
-    const additionalGivenName = (
-      form.get("additionalGivenName") as string
-    ).trim();
-    const secondaryFamilyName = (
-      form.get("secondaryFamilyName") as string
-    ).trim();
+    const additionalGivenName = (form.get("additionalGivenName") as string).trim();
+    const secondaryFamilyName = (form.get("secondaryFamilyName") as string).trim();
+    const email = (form.get("email") as string).trim();
+    const description = (form.get("description") as string).trim();
     const headImage = form.get("headImage");
 
     const res = await fetch(`/api/proxy/identities/${identity.id}`, {
@@ -68,6 +68,8 @@ export function EditIdentityDialog({ identity }: Props) {
         additionalGivenName: additionalGivenName || null,
         secondaryFamilyName: secondaryFamilyName || null,
         validTo: validTo || null,
+        email: email || null,
+        description: description || null,
       }),
     });
 
@@ -203,6 +205,28 @@ export function EditIdentityDialog({ identity }: Props) {
                       className={inputClass}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={identity.email ?? ""}
+                    placeholder="jane@example.com"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass}>Description</label>
+                  <textarea
+                    name="description"
+                    defaultValue={identity.description ?? ""}
+                    placeholder="A short bio or note about this identity"
+                    rows={3}
+                    className={`${inputClass} resize-none`}
+                  />
                 </div>
 
                 {/* Image */}

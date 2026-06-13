@@ -7,6 +7,8 @@ type Identity = {
   id: string;
   displayName: string;
   image: string | null;
+  email: string | null;
+  description: string | null;
 };
 
 async function getSharedIdentity(token: string): Promise<Identity | null> {
@@ -38,6 +40,21 @@ export default async function SharePage({
         <h1 className="text-2xl font-bold text-white text-center">
           {identity.displayName}
         </h1>
+
+        {identity.email && (
+          <a
+            href={`mailto:${identity.email}`}
+            className="text-sm text-white/70 hover:text-white transition-colors"
+          >
+            {identity.email}
+          </a>
+        )}
+
+        {identity.description && (
+          <p className="text-sm text-white/60 text-center leading-relaxed">
+            {identity.description}
+          </p>
+        )}
 
       </div>
     </div>

@@ -90,6 +90,8 @@ export default async function Home() {
                         validFrom: identity.validFrom.toISOString(),
                         validTo: identity.validTo?.toISOString() ?? null,
                         image: identity.image,
+                        email: identity.email,
+                        description: identity.description,
                       }}
                     />
                     <DeleteIdentityButton identityId={identity.id} />

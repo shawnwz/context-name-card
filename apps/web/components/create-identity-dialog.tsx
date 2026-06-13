@@ -28,6 +28,8 @@ type NamesStep = {
   secondaryFamilyName: string;
   displayName: string;
   displayNameTouched: boolean;
+  email: string;
+  description: string;
   validFrom: string;
   validTo: string;
 };
@@ -249,6 +251,27 @@ function NamesStep({
         )}
       </div>
 
+      <div>
+        <label className={labelClass}>Email</label>
+        <input
+          type="email"
+          value={data.email}
+          onChange={(e) => onChange({ ...data, email: e.target.value })}
+          placeholder="jane@example.com"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Description</label>
+        <textarea
+          value={data.description}
+          onChange={(e) => onChange({ ...data, description: e.target.value })}
+          placeholder="A short bio or note about this identity"
+          rows={3}
+          className={`${inputClass} resize-none`}
+        />
+      </div>
     </div>
   );
 }
@@ -380,6 +403,8 @@ export function CreateIdentityDialog({
     secondaryFamilyName: "",
     displayName: "",
     displayNameTouched: false,
+    email: "",
+    description: "",
     validFrom: new Date().toISOString().split("T")[0]!,
     validTo: "",
   });
@@ -403,6 +428,8 @@ export function CreateIdentityDialog({
       secondaryFamilyName: "",
       displayName: "",
       displayNameTouched: false,
+      email: "",
+      description: "",
       validFrom: new Date().toISOString().split("T")[0]!,
       validTo: "",
     });
@@ -473,6 +500,10 @@ export function CreateIdentityDialog({
           secondaryFamilyName: namesData.secondaryFamilyName.trim(),
         }),
         ...(namesData.validTo && { validTo: namesData.validTo }),
+        ...(namesData.email.trim() && { email: namesData.email.trim() }),
+        ...(namesData.description.trim() && {
+          description: namesData.description.trim(),
+        }),
       }),
     });
 

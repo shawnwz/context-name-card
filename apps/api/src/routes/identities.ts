@@ -13,6 +13,8 @@ type IdentityBody = {
   secondaryFamilyName?: string;
   displayName: string;
   image?: string;
+  email?: string;
+  description?: string;
 };
 
 type IdentityPatchBody = Partial<Omit<IdentityBody, "userId" | "contextId">>;
@@ -61,6 +63,8 @@ export async function identityRoutes(app: FastifyInstance) {
       secondaryFamilyName,
       displayName,
       image,
+      email,
+      description,
     } = request.body;
 
     if (
@@ -90,6 +94,8 @@ export async function identityRoutes(app: FastifyInstance) {
           secondaryFamilyName,
           displayName,
           image,
+          email,
+          description,
         },
         include: { context: true },
       });
@@ -154,6 +160,8 @@ export async function identityRoutes(app: FastifyInstance) {
       secondaryFamilyName,
       displayName,
       image,
+      email,
+      description,
     } = request.body;
 
     try {
@@ -170,6 +178,8 @@ export async function identityRoutes(app: FastifyInstance) {
           secondaryFamilyName,
           displayName,
           image,
+          email,
+          description,
         },
         include: { context: true },
       });

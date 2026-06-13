@@ -104,7 +104,9 @@ model Identity {
   secondaryFamilyName String?
   displayName         String
 
-  image String?
+  image       String?
+  email       String?
+  description String?
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   context IdentityContext @relation(fields: [contextId], references: [id])
