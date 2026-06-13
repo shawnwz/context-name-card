@@ -1,9 +1,10 @@
-import { auth } from "../auth";
-import { CreateIdentityDialog } from "../components/create-identity-dialog";
-import { EditIdentityDialog } from "../components/edit-identity-dialog";
-import { DeleteIdentityButton } from "../components/delete-identity-button";
+import { auth } from "../../auth";
+import { CreateIdentityDialog } from "../../components/create-identity-dialog";
+import { EditIdentityDialog } from "../../components/edit-identity-dialog";
+import { DeleteIdentityButton } from "../../components/delete-identity-button";
+import { ShareIdentityButton } from "../../components/share-identity-button";
 import { prisma } from "@repo/database";
-import { getIdentityHeadImage, toCssImageUrl } from "../lib/placeholder-heads";
+import { getIdentityHeadImage, toCssImageUrl } from "../../lib/placeholder-heads";
 
 export default async function Home() {
   const session = await auth();
@@ -76,6 +77,7 @@ export default async function Home() {
                     <span className="text-xs text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
                       {identity.context.name}
                     </span>
+                    <ShareIdentityButton identityId={identity.id} />
                     <EditIdentityDialog
                       identity={{
                         id: identity.id,
@@ -93,13 +95,6 @@ export default async function Home() {
                     <DeleteIdentityButton identityId={identity.id} />
                   </div>
                 </div>
-                <span className="text-sm text-black/60 dark:text-white/60">
-                  {identity.givenName} {identity.additionalGivenName ?? ""}{" "}
-                  {identity.familyName}
-                  {identity.secondaryFamilyName
-                    ? ` (${identity.secondaryFamilyName})`
-                    : ""}
-                </span>
                 <span className="text-xs text-black/40 dark:text-white/40">
                   Valid from {identity.validFrom.toLocaleDateString()}
                   {identity.validTo

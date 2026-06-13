@@ -110,4 +110,17 @@ model Identity {
   context IdentityContext @relation(fields: [contextId], references: [id])
 
   @@unique([userId, contextId])
+
+  shares IdentityShare[]
+}
+
+model IdentityShare {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  identityId String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+
+  identity Identity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 }

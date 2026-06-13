@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth, signOut } from "../auth";
 import { LoginModal } from "./login-modal";
 import { SignIn } from "./sign-in";
@@ -12,6 +13,13 @@ export async function Header() {
       <div className="flex items-center gap-3">
         {session?.user ? (
           <>
+            <Link
+              href="/shares"
+              className="text-sm text-white/60 hover:text-white transition-colors"
+            >
+              Shared links
+            </Link>
+            <span className="text-white/20">·</span>
             <span className="text-sm text-white/60">
               {session.user.email}
             </span>

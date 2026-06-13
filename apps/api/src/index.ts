@@ -4,6 +4,7 @@ import { prisma } from "@repo/database";
 import { authenticate } from "./plugins/authenticate.js";
 import { identityContextRoutes } from "./routes/identityContexts.js";
 import { identityRoutes } from "./routes/identities.js";
+import { publicShareRoutes, shareRoutes } from "./routes/shares.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -22,6 +23,8 @@ app.register(multipart, {
 });
 
 // Public routes
+app.register(publicShareRoutes);
+
 app.get("/health", async () => {
   return { status: "ok" };
 });
@@ -43,6 +46,7 @@ app.register(async (protectedApp) => {
   protectedApp.addHook("preHandler", authenticate);
   protectedApp.register(identityContextRoutes);
   protectedApp.register(identityRoutes);
+  protectedApp.register(shareRoutes);
 });
 
 const start = async () => {
