@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import {
   getPlaceholderHeadImage,
@@ -30,6 +31,8 @@ type NamesStep = {
   displayNameTouched: boolean;
   email: string;
   description: string;
+  location: string;
+  tel: string;
   validFrom: string;
   validTo: string;
 };
@@ -42,12 +45,12 @@ const labelClass =
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 
-function Steps({ current }: { current: 1 | 2 | 3 }) {
-  const labels = ["Context", "Names", "Photo"];
+function Steps({ current }: { current: 1 | 2 }) {
+  const labels = ["Context", "Name card"];
   return (
     <div className="flex items-center gap-2">
       {labels.map((label, i) => {
-        const step = (i + 1) as 1 | 2 | 3;
+        const step = (i + 1) as 1 | 2;
         const done = step < current;
         const active = step === current;
         return (
@@ -158,15 +161,39 @@ function ContextStep({
   );
 }
 
-// ─── Step 2: Names ────────────────────────────────────────────────────────────
+// ─── Step 2: Name card (WYSIWYG) ───────────────────────────────────────────────
 
-function NamesStep({
+const cardTextInputClass =
+  "bg-transparent text-center outline-none border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors w-full";
+
+const cardRowInputClass =
+  "bg-transparent outline-none border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors w-full";
+
+function NameCardStep({
+  identityId,
   data,
   onChange,
+  file,
+  onFileChange,
 }: {
+  identityId: string;
   data: NamesStep;
   onChange: (d: NamesStep) => void;
+  file: File | null;
+  onFileChange: (f: File | null) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) { setPreview(null); return; }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const avatarSrc = preview ?? getPlaceholderHeadImage(identityId);
+
   function set(field: keyof NamesStep, value: string | boolean) {
     const next = { ...data, [field]: value };
 
@@ -184,163 +211,26 @@ function NamesStep({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Given name *</label>
-          <input
-            autoFocus
-            type="text"
-            value={data.givenName}
-            onChange={(e) => set("givenName", e.target.value)}
-            placeholder="Jane"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Family name *</label>
-          <input
-            type="text"
-            value={data.familyName}
-            onChange={(e) => set("familyName", e.target.value)}
-            placeholder="Doe"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Additional given name</label>
-          <input
-            type="text"
-            value={data.additionalGivenName}
-            onChange={(e) => set("additionalGivenName", e.target.value)}
-            placeholder="Marie"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Secondary family name</label>
-          <input
-            type="text"
-            value={data.secondaryFamilyName}
-            onChange={(e) => set("secondaryFamilyName", e.target.value)}
-            placeholder="Smith"
-            className={inputClass}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col gap-5">
+      <p className="text-sm text-black/50 dark:text-white/50">
+        Edit the card directly — this is exactly how it will look when shared.
+      </p>
 
-      <div>
-        <label className={labelClass}>Display name *</label>
-        <input
-          type="text"
-          value={data.displayName}
-          onChange={(e) => {
-            onChange({
-              ...data,
-              displayName: e.target.value,
-              displayNameTouched: true,
-            });
-          }}
-          placeholder="Jane Doe"
-          className={inputClass}
-        />
-        {!data.displayNameTouched && (
-          <p className="text-[11px] text-black/30 dark:text-white/30 mt-1">
-            Auto-filled from your name — edit to customise
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label className={labelClass}>Email</label>
-        <input
-          type="email"
-          value={data.email}
-          onChange={(e) => onChange({ ...data, email: e.target.value })}
-          placeholder="jane@example.com"
-          className={inputClass}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Description</label>
-        <textarea
-          value={data.description}
-          onChange={(e) => onChange({ ...data, description: e.target.value })}
-          placeholder="A short bio or note about this identity"
-          rows={3}
-          className={`${inputClass} resize-none`}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 3: Photo ────────────────────────────────────────────────────────────
-
-function PhotoStep({
-  identityId,
-  displayName,
-  file,
-  onFileChange,
-  validFrom,
-  validTo,
-  onValidFromChange,
-  onValidToChange,
-}: {
-  identityId: string;
-  displayName: string;
-  file: File | null;
-  onFileChange: (f: File | null) => void;
-  validFrom: string;
-  validTo: string;
-  onValidFromChange: (v: string) => void;
-  onValidToChange: (v: string) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!file) { setPreview(null); return; }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
-
-  const avatarSrc = preview ?? getPlaceholderHeadImage(identityId);
-
-  return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Preview card */}
-      <div className="w-48 bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/10 rounded-2xl p-5 flex flex-col items-center gap-3">
-        <div
-          className="size-16 rounded-full bg-cover bg-center ring-1 ring-black/10 dark:ring-white/15"
-          style={{ backgroundImage: toCssImageUrl(avatarSrc) }}
-        />
-        <span className="text-sm font-medium text-center leading-tight">
-          {displayName || "Display name"}
-        </span>
-      </div>
-
-      <div className="flex flex-col items-center gap-2 w-full">
+      {/* WYSIWYG card, styled to match the real share card */}
+      <div className="w-full bg-gradient-to-br from-purple-950 via-purple-900 to-violet-800 rounded-3xl p-8 flex flex-col items-center gap-3 shadow-lg">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="px-4 py-2 text-sm rounded-lg border border-black/15 dark:border-white/15 cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
+          className="relative group cursor-pointer"
         >
-          {file ? "Change photo" : "Choose photo"}
+          <div
+            className="size-20 rounded-full bg-cover bg-center ring-2 ring-white/20"
+            style={{ backgroundImage: toCssImageUrl(avatarSrc) }}
+          />
+          <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-medium text-center px-1">
+            {file ? "Change" : "Add photo"}
+          </div>
         </button>
-
-        {file && (
-          <button
-            type="button"
-            onClick={() => onFileChange(null)}
-            className="text-xs text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60 cursor-pointer"
-          >
-            Remove
-          </button>
-        )}
-
         <input
           ref={inputRef}
           type="file"
@@ -348,19 +238,116 @@ function PhotoStep({
           className="hidden"
           onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
         />
+        {file && (
+          <button
+            type="button"
+            onClick={() => onFileChange(null)}
+            className="text-[11px] text-white/40 hover:text-white/70 cursor-pointer -mt-1"
+          >
+            Remove photo
+          </button>
+        )}
 
-        <p className="text-xs text-black/30 dark:text-white/30">
-          JPEG, PNG or WebP · max 2 MB · optional
-        </p>
+        <input
+          type="text"
+          value={data.displayName}
+          onChange={(e) =>
+            onChange({
+              ...data,
+              displayName: e.target.value,
+              displayNameTouched: true,
+            })
+          }
+          placeholder="Display name"
+          className={`${cardTextInputClass} text-2xl font-bold text-white placeholder:text-white/40`}
+        />
+
+        <div className="flex flex-col items-start gap-1.5 w-full -mt-1">
+          <div className="flex items-center gap-2 w-full">
+            <MapPin className="size-3.5 shrink-0 text-white/40" />
+            <input
+              type="text"
+              value={data.location}
+              onChange={(e) => onChange({ ...data, location: e.target.value })}
+              placeholder="San Francisco, CA"
+              className={`${cardRowInputClass} text-sm text-white/50 placeholder:text-white/30`}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full">
+            <Mail className="size-3.5 shrink-0 text-white/40" />
+            <input
+              type="email"
+              value={data.email}
+              onChange={(e) => onChange({ ...data, email: e.target.value })}
+              placeholder="jane@example.com"
+              className={`${cardRowInputClass} text-sm text-white/70 placeholder:text-white/30`}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 w-full">
+            <Phone className="size-3.5 shrink-0 text-white/40" />
+            <input
+              type="tel"
+              value={data.tel}
+              onChange={(e) => onChange({ ...data, tel: e.target.value })}
+              placeholder="+1 555 123 4567"
+              className={`${cardRowInputClass} text-sm text-white/70 placeholder:text-white/30`}
+            />
+          </div>
+        </div>
+
+        <textarea
+          value={data.description}
+          onChange={(e) => onChange({ ...data, description: e.target.value })}
+          placeholder="A short bio or note about this identity"
+          rows={2}
+          className={`${cardTextInputClass} resize-none text-sm text-white/60 placeholder:text-white/30 leading-relaxed`}
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 w-full">
+      {/* Legal name — required for the identity record, kept secondary to the card */}
+      <div>
+        <p className={labelClass}>Legal name</p>
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="text"
+            value={data.givenName}
+            onChange={(e) => set("givenName", e.target.value)}
+            placeholder="Given name *"
+            className={inputClass}
+          />
+          <input
+            type="text"
+            value={data.familyName}
+            onChange={(e) => set("familyName", e.target.value)}
+            placeholder="Family name *"
+            className={inputClass}
+          />
+          <input
+            type="text"
+            value={data.additionalGivenName}
+            onChange={(e) => set("additionalGivenName", e.target.value)}
+            placeholder="Additional given name"
+            className={inputClass}
+          />
+          <input
+            type="text"
+            value={data.secondaryFamilyName}
+            onChange={(e) => set("secondaryFamilyName", e.target.value)}
+            placeholder="Secondary family name"
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Valid from *</label>
           <input
             type="date"
-            value={validFrom}
-            onChange={(e) => onValidFromChange(e.target.value)}
+            value={data.validFrom}
+            onChange={(e) => onChange({ ...data, validFrom: e.target.value })}
             className={inputClass}
           />
         </div>
@@ -368,8 +355,8 @@ function PhotoStep({
           <label className={labelClass}>Valid to</label>
           <input
             type="date"
-            value={validTo}
-            onChange={(e) => onValidToChange(e.target.value)}
+            value={data.validTo}
+            onChange={(e) => onChange({ ...data, validTo: e.target.value })}
             className={inputClass}
           />
         </div>
@@ -387,7 +374,7 @@ export function CreateIdentityDialog({
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -405,6 +392,8 @@ export function CreateIdentityDialog({
     displayNameTouched: false,
     email: "",
     description: "",
+    location: "",
+    tel: "",
     validFrom: new Date().toISOString().split("T")[0]!,
     validTo: "",
   });
@@ -430,6 +419,8 @@ export function CreateIdentityDialog({
       displayNameTouched: false,
       email: "",
       description: "",
+      location: "",
+      tel: "",
       validFrom: new Date().toISOString().split("T")[0]!,
       validTo: "",
     });
@@ -504,6 +495,10 @@ export function CreateIdentityDialog({
         ...(namesData.description.trim() && {
           description: namesData.description.trim(),
         }),
+        ...(namesData.location.trim() && {
+          location: namesData.location.trim(),
+        }),
+        ...(namesData.tel.trim() && { tel: namesData.tel.trim() }),
       }),
     });
 
@@ -570,22 +565,12 @@ export function CreateIdentityDialog({
                 />
               )}
               {step === 2 && (
-                <NamesStep data={namesData} onChange={setNamesData} />
-              )}
-              {step === 3 && (
-                <PhotoStep
+                <NameCardStep
                   identityId={placeholderSeed}
-                  displayName={namesData.displayName}
+                  data={namesData}
+                  onChange={setNamesData}
                   file={photoFile}
                   onFileChange={setPhotoFile}
-                  validFrom={namesData.validFrom}
-                  validTo={namesData.validTo}
-                  onValidFromChange={(v) =>
-                    setNamesData((d) => ({ ...d, validFrom: v }))
-                  }
-                  onValidToChange={(v) =>
-                    setNamesData((d) => ({ ...d, validTo: v }))
-                  }
                 />
               )}
 
@@ -600,17 +585,17 @@ export function CreateIdentityDialog({
             <div className="flex justify-between gap-2 px-6 py-4 border-t border-black/8 dark:border-white/10">
               <button
                 type="button"
-                onClick={step === 1 ? handleClose : () => setStep((s) => (s - 1) as 1 | 2 | 3)}
+                onClick={step === 1 ? handleClose : () => setStep(1)}
                 className="px-4 py-2 text-sm rounded-lg border border-black/15 dark:border-white/15 cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
               >
                 {step === 1 ? "Cancel" : "← Back"}
               </button>
 
-              {step < 3 ? (
+              {step === 1 ? (
                 <button
                   type="button"
-                  disabled={step === 1 ? !canAdvanceStep1() : !canAdvanceStep2()}
-                  onClick={() => setStep((s) => (s + 1) as 2 | 3)}
+                  disabled={!canAdvanceStep1()}
+                  onClick={() => setStep(2)}
                   className="px-4 py-2 text-sm rounded-lg bg-[var(--foreground)] text-[var(--background)] font-medium cursor-pointer hover:opacity-85 disabled:opacity-40 transition-opacity"
                 >
                   Next →
@@ -618,7 +603,7 @@ export function CreateIdentityDialog({
               ) : (
                 <button
                   type="button"
-                  disabled={loading}
+                  disabled={loading || !canAdvanceStep2()}
                   onClick={handleCreate}
                   className="px-4 py-2 text-sm rounded-lg bg-[var(--foreground)] text-[var(--background)] font-medium cursor-pointer hover:opacity-85 disabled:opacity-50 transition-opacity"
                 >

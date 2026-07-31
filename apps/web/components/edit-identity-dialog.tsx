@@ -17,6 +17,8 @@ export type EditableIdentity = {
   image: string | null;
   email: string | null;
   description: string | null;
+  location: string | null;
+  tel: string | null;
 };
 
 type Props = { identity: EditableIdentity };
@@ -55,6 +57,8 @@ export function EditIdentityDialog({ identity }: Props) {
     const secondaryFamilyName = (form.get("secondaryFamilyName") as string).trim();
     const email = (form.get("email") as string).trim();
     const description = (form.get("description") as string).trim();
+    const location = (form.get("location") as string).trim();
+    const tel = (form.get("tel") as string).trim();
     const headImage = form.get("headImage");
 
     const res = await fetch(`/api/proxy/identities/${identity.id}`, {
@@ -70,6 +74,8 @@ export function EditIdentityDialog({ identity }: Props) {
         validTo: validTo || null,
         email: email || null,
         description: description || null,
+        location: location || null,
+        tel: tel || null,
       }),
     });
 
@@ -227,6 +233,29 @@ export function EditIdentityDialog({ identity }: Props) {
                     rows={3}
                     className={`${inputClass} resize-none`}
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Location</label>
+                    <input
+                      name="location"
+                      type="text"
+                      defaultValue={identity.location ?? ""}
+                      placeholder="San Francisco, CA"
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Phone</label>
+                    <input
+                      name="tel"
+                      type="tel"
+                      defaultValue={identity.tel ?? ""}
+                      placeholder="+1 555 123 4567"
+                      className={inputClass}
+                    />
+                  </div>
                 </div>
 
                 {/* Image */}

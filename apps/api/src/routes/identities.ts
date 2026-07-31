@@ -15,6 +15,8 @@ type IdentityBody = {
   image?: string;
   email?: string;
   description?: string;
+  location?: string;
+  tel?: string;
 };
 
 type IdentityPatchBody = Partial<Omit<IdentityBody, "userId" | "contextId">>;
@@ -65,6 +67,8 @@ export async function identityRoutes(app: FastifyInstance) {
       image,
       email,
       description,
+      location,
+      tel,
     } = request.body;
 
     if (
@@ -96,6 +100,8 @@ export async function identityRoutes(app: FastifyInstance) {
           image,
           email,
           description,
+          location,
+          tel,
         },
         include: { context: true },
       });
@@ -162,6 +168,8 @@ export async function identityRoutes(app: FastifyInstance) {
       image,
       email,
       description,
+      location,
+      tel,
     } = request.body;
 
     try {
@@ -180,6 +188,8 @@ export async function identityRoutes(app: FastifyInstance) {
           image,
           email,
           description,
+          location,
+          tel,
         },
         include: { context: true },
       });

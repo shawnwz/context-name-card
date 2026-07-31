@@ -107,6 +107,8 @@ model Identity {
   image       String?
   email       String?
   description String?
+  location    String?
+  tel         String?
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   context IdentityContext @relation(fields: [contextId], references: [id])

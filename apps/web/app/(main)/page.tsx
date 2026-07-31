@@ -92,6 +92,8 @@ export default async function Home() {
                         image: identity.image,
                         email: identity.email,
                         description: identity.description,
+                        location: identity.location,
+                        tel: identity.tel,
                       }}
                     />
                     <DeleteIdentityButton identityId={identity.id} />
