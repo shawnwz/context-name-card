@@ -1,0 +1,76 @@
+# Local/dev stack: Postgres + the api and web images from apps/*/Dockerfile.
+#
+# Secrets (OAuth client ids/secrets, AUTH_RESEND_KEY, AWS keys, ...) are read
+# from a root .env file (copy .env.example -> .env and fill in real values).
+# DATABASE_URL and API_URL are overridden below to point at the containers
+# in this compose network instead of whatever's in your .env.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: contextid
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot job: applies Prisma migrations, then exits. api/web wait for it.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    entrypoint: ["/app/packages/database/node_modules/.bin/prisma"]
+    command: ["migrate", "deploy", "--schema=/app/packages/database/prisma/schema.prisma"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/contextid
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/contextid
+    ports:
+      - "4000:4000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/contextid
+      API_URL: http://api:4000
+      # Pins the canonical URL Auth.js uses to build OAuth callback URLs,
+      # instead of inferring it from the request's Host header (which
+      # breaks Google sign-in if you ever hit the app via 0.0.0.0:3000
+      # instead of localhost:3000 — Google rejects non-"localhost" http).
+      AUTH_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  postgres_data:

@@ -7,6 +7,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(resolve(__dirname, '../..'));
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  output: "standalone",
+};
 
 export default nextConfig;

@@ -13,6 +13,7 @@ declare module "next-auth" {
 
 const result: NextAuthResult = NextAuth({
   adapter: PrismaAdapter(prisma),
+  trustHost: true,
   providers: [
     Google({ allowDangerousEmailAccountLinking: true }),  //google and github are safe to link
     GitHub({ allowDangerousEmailAccountLinking: true }),
