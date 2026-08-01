@@ -180,3 +180,173 @@ pnpm --filter database migrate:reset
 ```
   pnpm --filter @repo/database exec dotenv -e ../../.env -- prisma db seed
 ```
+
+## AWS Deployment
+
+`apps/web` and `apps/api` deploy as two separate containers on **Amazon ECS
+Express Mode** (AWS closed App Runner to new customers, so this is the
+replacement) — each gets its own Fargate service + ALB + auto scaling +
+a default HTTPS URL, no custom domain required.
+
+That URL is **not** derived from the service name — it's a hash AWS assigns
+at creation time (e.g. `https://co-f2332c4b2797480d98115e41e1153792.ecs.us-west-2.on.aws`),
+only knowable after the service exists. Get the real, current URLs with:
+
+```sh
+cd infra && terraform output actual_urls
+```
+
+Postgres stays on the existing Aiven instance (not migrated to RDS). The S3
+bucket for identity head-images is unchanged and unmanaged by Terraform.
+
+All infra is defined in `infra/` (Terraform) and deploys are automated via
+`.github/workflows/deploy-prod.yml` (GitHub Actions).
+
+### 1. One-time infra setup (Terraform)
+
+```sh
+cd infra
+cp terraform.tfvars.example terraform.tfvars   # fill in real DATABASE_URL / AUTH_* values
+terraform init
+terraform apply
+```
+
+- Uses the `wzhe-aws-amazon-com` AWS CLI profile and expects account
+  `391422395203` — both pinned explicitly in `versions.tf` (`profile` +
+  `allowed_account_ids`), so it refuses to run against the wrong
+  account/credentials regardless of any `AWS_PROFILE` set in your shell.
+- Creates: 2 ECR repos, the GitHub OIDC provider + deploy role, the ECS
+  task execution / Express infrastructure / api task IAM roles, a default
+  VPC + subnets (this account didn't have one), and the two
+  `aws_ecs_express_gateway_service` resources themselves.
+- State is local (`infra/terraform.tfstate`, gitignored) — fine for a
+  single-developer project. See the comment in `versions.tf` for how to
+  switch to an S3 backend later if that changes.
+- The services are created pointing at a public placeholder image
+  (`nginx`) since Express Mode requires *some* image to exist at creation
+  time. That placeholder can't pass health checks (wrong port) — expected,
+  and fixed by the first real deploy below. `wait_for_steady_state = false`
+  is set specifically so `terraform apply` doesn't hang waiting for it.
+
+### 2. Wire up GitHub Actions
+
+```sh
+cd infra
+terraform output -json github_actions_variables
+```
+
+Paste each key/value from that output into **GitHub repo → Settings →
+Secrets and variables → Actions → Variables** tab. Then add one **Secret**
+(same tab, Secrets sub-tab): `DATABASE_URL` — only the `migrate` job in the
+workflow needs it; the running services get their env vars from Terraform,
+not from GitHub.
+
+Once the services exist (after step 1), run `terraform output actual_urls`
+and:
+
+1. Set `var.web_url`/`var.api_url` in `terraform.tfvars` (or the defaults in
+   `variables.tf`) to those real values, then `terraform apply` again — the
+   services need their own real URLs as `AUTH_URL`/`API_URL` env vars, which
+   can't be known on the *first* apply (a resource can't reference its own
+   computed output within its own config).
+2. Add `<web_url>/api/auth/callback/google` and `<web_url>/api/auth/callback/github`
+   (the **web** service's URL — it's the one serving the OAuth flow, not api)
+   to the respective OAuth apps' authorized redirect URIs.
+
+### 3. Normal deploys
+
+Merge to the `prod` branch, then tag its HEAD and push the tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+`.github/workflows/deploy-prod.yml` triggers on any `v*.*.*` tag push and
+runs: build + push both images to ECR → `prisma migrate deploy` against
+Aiven → deploy api, then web, via AWS's official
+`aws-actions/amazon-ecs-deploy-express-service` action (OIDC auth throughout,
+no long-lived AWS keys anywhere).
+
+### 4. First-time / manual deploy (bypassing CI)
+
+Useful right after `terraform apply` (to replace the placeholder image
+before setting up CI), or any time you want to deploy without pushing a tag.
+
+```sh
+# Authenticate docker to ECR
+aws ecr get-login-password --region us-west-2 --profile wzhe-aws-amazon-com \
+  | docker login --username AWS --password-stdin 391422395203.dkr.ecr.us-west-2.amazonaws.com
+
+# Build for linux/amd64 explicitly if you're on Apple Silicon — Fargate is amd64
+docker build --platform linux/amd64 -f apps/web/Dockerfile \
+  -t 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1 .
+docker build --platform linux/amd64 -f apps/api/Dockerfile \
+  -t 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1 .
+
+docker push 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1
+docker push 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1
+```
+
+The AWS CLI needs to be reasonably recent — `ecs update-express-gateway-service`
+is a late-2025 addition; if `aws ecs update-express-gateway-service help`
+doesn't show it, upgrade (`pip install --upgrade awscli` in a venv works
+if you don't want to touch your system install).
+
+```sh
+export AWS_PROFILE=wzhe-aws-amazon-com
+
+# api first — web talks to it, not the other way around
+aws ecs update-express-gateway-service \
+  --service-arn arn:aws:ecs:us-west-2:391422395203:service/default/contextid-api \
+  --execution-role-arn arn:aws:iam::391422395203:role/contextid-ecs-task-execution \
+  --task-role-arn arn:aws:iam::391422395203:role/contextid-api-task \
+  --primary-container '{"image":"391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1","containerPort":4000}' \
+  --health-check-path "/health" \
+  --region us-west-2
+
+aws ecs update-express-gateway-service \
+  --service-arn arn:aws:ecs:us-west-2:391422395203:service/default/contextid-web \
+  --execution-role-arn arn:aws:iam::391422395203:role/contextid-ecs-task-execution \
+  --primary-container '{"image":"391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1","containerPort":3000}' \
+  --health-check-path "/" \
+  --region us-west-2
+```
+
+Fields you omit from `--primary-container`/other flags are left as-is
+(confirmed empirically — env vars, roles, and scaling config set by
+Terraform all survive an update that only touches the image/port).
+
+Check rollout status (Express Mode services are regular ECS services under
+the hood, so the standard ECS APIs work even on older AWS CLI versions
+that predate the Express Mode commands):
+
+```sh
+aws ecs describe-services --cluster default --services contextid-web contextid-api \
+  --region us-west-2 \
+  --query 'services[].{name:serviceName,running:runningCount,deployments:deployments[].{status:status,rolloutState:rolloutState,failedTasks:failedTasks}}'
+```
+
+`rolloutState` reaches `COMPLETED` once the new task passes ALB health
+checks and the old one has drained. A brand-new service's first real
+deploy can take a couple of minutes.
+
+### Destroying everything
+
+```sh
+cd infra
+terraform destroy
+```
+
+Known gotcha: the two ECR repos will fail to delete if they still have
+images in them (`force_delete` isn't set) — empty them first:
+
+```sh
+aws ecr batch-delete-image --repository-name contextid-web \
+  --image-ids "$(aws ecr list-images --repository-name contextid-web --query 'imageIds' --output json)"
+aws ecr batch-delete-image --repository-name contextid-api \
+  --image-ids "$(aws ecr list-images --repository-name contextid-api --query 'imageIds' --output json)"
+```
+
+`terraform destroy` does **not** touch the S3 bucket or Aiven Postgres —
+both were created outside Terraform and stay untouched.

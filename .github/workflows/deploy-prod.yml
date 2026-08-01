@@ -1,0 +1,104 @@
+name: Deploy to AWS (prod)
+
+# Tag pushes aren't inherently scoped to a branch in GitHub Actions — the
+# real guarantee here is process: only tag the `prod` branch's HEAD once
+# it's been reviewed/merged, don't tag arbitrary commits.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  id-token: write # required for AWS OIDC
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push web image
+        env:
+          IMAGE: ${{ vars.ECR_WEB_REPOSITORY }}
+        run: |
+          docker build -f apps/web/Dockerfile -t "$IMAGE:${{ github.ref_name }}" .
+          docker push "$IMAGE:${{ github.ref_name }}"
+
+      - name: Build and push api image
+        env:
+          IMAGE: ${{ vars.ECR_API_REPOSITORY }}
+        run: |
+          docker build -f apps/api/Dockerfile -t "$IMAGE:${{ github.ref_name }}" .
+          docker push "$IMAGE:${{ github.ref_name }}"
+
+  migrate:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply Prisma migrations
+        run: pnpm --filter @repo/database migrate:deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy:
+    needs: [build-and-push, migrate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Deploy api first, then web — web talks to api, not the other way
+      # around, so this ordering avoids a brief window of web pointing at
+      # an api that's mid-deployment.
+      - name: Deploy api
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ vars.API_SERVICE_NAME }}
+          image: ${{ vars.ECR_API_REPOSITORY }}:${{ needs.build-and-push.outputs.image_tag }}
+          execution-role-arn: ${{ vars.ECS_TASK_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ vars.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          task-role-arn: ${{ vars.API_TASK_ROLE_ARN }}
+          container-port: "4000"
+
+      - name: Deploy web
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          service-name: ${{ vars.WEB_SERVICE_NAME }}
+          image: ${{ vars.ECR_WEB_REPOSITORY }}:${{ needs.build-and-push.outputs.image_tag }}
+          execution-role-arn: ${{ vars.ECS_TASK_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ vars.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          container-port: "3000"
