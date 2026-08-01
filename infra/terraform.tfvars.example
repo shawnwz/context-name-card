@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values before
+# running terraform apply. These become the running services' env vars —
+# same values as your root .env.
+
+database_url       = "postgresql://user:pass@host:port/db"
+auth_secret        = ""
+auth_google_id     = ""
+auth_google_secret = ""
+auth_github_id     = ""
+auth_github_secret = ""
+auth_resend_key    = ""
