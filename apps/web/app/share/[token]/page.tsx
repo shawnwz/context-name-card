@@ -6,6 +6,7 @@ const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
 type Identity = {
   id: string;
+  courtesyTitle: string | null;
   displayName: string;
   image: string | null;
   email: string | null;
@@ -41,6 +42,7 @@ export default async function SharePage({
         />
 
         <h1 className="text-2xl font-bold text-white text-center">
+          {identity.courtesyTitle && `${identity.courtesyTitle} `}
           {identity.displayName}
         </h1>
 

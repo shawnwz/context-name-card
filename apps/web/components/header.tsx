@@ -8,7 +8,12 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between px-6 h-14 border-b border-white/10 bg-gradient-to-r from-purple-950 to-violet-800">
-      <span className="text-base font-semibold tracking-tight text-white">ContextID</span>
+      <Link
+        href="/"
+        className="text-base font-semibold tracking-tight text-white hover:opacity-85 transition-opacity"
+      >
+        ContextID
+      </Link>
 
       <div className="flex items-center gap-3">
         {session?.user ? (

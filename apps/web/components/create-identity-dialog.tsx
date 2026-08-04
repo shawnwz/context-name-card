@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
+import { COURTESY_TITLES } from "../lib/courtesy-titles";
 import {
   getPlaceholderHeadImage,
   toCssImageUrl,
@@ -23,6 +24,7 @@ type ContextStep = {
 };
 
 type NamesStep = {
+  courtesyTitle: string;
   givenName: string;
   familyName: string;
   additionalGivenName: string;
@@ -192,7 +194,7 @@ function NameCardStep({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const avatarSrc = preview ?? getPlaceholderHeadImage(identityId);
+  const avatarSrc = preview ?? getPlaceholderHeadImage(identityId, data.displayName);
 
   function set(field: keyof NamesStep, value: string | boolean) {
     const next = { ...data, [field]: value };
@@ -248,19 +250,33 @@ function NameCardStep({
           </button>
         )}
 
-        <input
-          type="text"
-          value={data.displayName}
-          onChange={(e) =>
-            onChange({
-              ...data,
-              displayName: e.target.value,
-              displayNameTouched: true,
-            })
-          }
-          placeholder="Display name"
-          className={`${cardTextInputClass} text-2xl font-bold text-white placeholder:text-white/40`}
-        />
+        <div className="flex items-center justify-center gap-1.5 w-full">
+          <select
+            value={data.courtesyTitle}
+            onChange={(e) => onChange({ ...data, courtesyTitle: e.target.value })}
+            className="bg-transparent outline-none cursor-pointer border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors text-2xl font-bold text-white/70"
+          >
+            <option value="" className="text-black">—</option>
+            {COURTESY_TITLES.map((title) => (
+              <option key={title} value={title} className="text-black">
+                {title}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={data.displayName}
+            onChange={(e) =>
+              onChange({
+                ...data,
+                displayName: e.target.value,
+                displayNameTouched: true,
+              })
+            }
+            placeholder="Display name"
+            className={`${cardTextInputClass} w-auto flex-1 text-2xl font-bold text-white placeholder:text-white/40`}
+          />
+        </div>
 
         <div className="flex flex-col items-start gap-1.5 w-full -mt-1">
           <div className="flex items-center gap-2 w-full">
@@ -384,6 +400,7 @@ export function CreateIdentityDialog({
   });
 
   const [namesData, setNamesData] = useState<NamesStep>({
+    courtesyTitle: "",
     givenName: "",
     familyName: "",
     additionalGivenName: "",
@@ -411,6 +428,7 @@ export function CreateIdentityDialog({
       newContextName: "",
     });
     setNamesData({
+      courtesyTitle: "",
       givenName: "",
       familyName: "",
       additionalGivenName: "",
@@ -484,6 +502,9 @@ export function CreateIdentityDialog({
         familyName: namesData.familyName.trim(),
         displayName: namesData.displayName.trim(),
         validFrom: namesData.validFrom,
+        ...(namesData.courtesyTitle && {
+          courtesyTitle: namesData.courtesyTitle,
+        }),
         ...(namesData.additionalGivenName.trim() && {
           additionalGivenName: namesData.additionalGivenName.trim(),
         }),

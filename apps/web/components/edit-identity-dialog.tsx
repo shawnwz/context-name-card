@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
+import { COURTESY_TITLES } from "../lib/courtesy-titles";
 
 export type EditableIdentity = {
   id: string;
   contextName: string;
+  courtesyTitle: string | null;
   givenName: string;
   familyName: string;
   additionalGivenName: string | null;
@@ -65,6 +67,7 @@ export function EditIdentityDialog({ identity }: Props) {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        courtesyTitle: (form.get("courtesyTitle") as string) || null,
         givenName: (form.get("givenName") as string).trim(),
         familyName: (form.get("familyName") as string).trim(),
         displayName: (form.get("displayName") as string).trim(),
@@ -179,15 +182,32 @@ export function EditIdentityDialog({ identity }: Props) {
                   </div>
                 </div>
 
-                <div>
-                  <label className={labelClass}>Display name *</label>
-                  <input
-                    name="displayName"
-                    type="text"
-                    required
-                    defaultValue={identity.displayName}
-                    className={inputClass}
-                  />
+                <div className="grid grid-cols-[100px_1fr] gap-3">
+                  <div>
+                    <label className={labelClass}>Title</label>
+                    <select
+                      name="courtesyTitle"
+                      defaultValue={identity.courtesyTitle ?? ""}
+                      className={inputClass}
+                    >
+                      <option value="">—</option>
+                      {COURTESY_TITLES.map((title) => (
+                        <option key={title} value={title}>
+                          {title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Display name *</label>
+                    <input
+                      name="displayName"
+                      type="text"
+                      required
+                      defaultValue={identity.displayName}
+                      className={inputClass}
+                    />
+                  </div>
                 </div>
 
                 {/* Validity */}
