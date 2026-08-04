@@ -7,6 +7,7 @@ type IdentityBody = {
   contextId: string;
   validFrom: string;
   validTo?: string;
+  courtesyTitle?: string;
   givenName: string;
   familyName: string;
   additionalGivenName?: string;
@@ -59,6 +60,7 @@ export async function identityRoutes(app: FastifyInstance) {
       contextId,
       validFrom,
       validTo,
+      courtesyTitle,
       givenName,
       familyName,
       additionalGivenName,
@@ -92,6 +94,7 @@ export async function identityRoutes(app: FastifyInstance) {
           contextId,
           validFrom: new Date(validFrom),
           validTo: validTo ? new Date(validTo) : undefined,
+          courtesyTitle,
           givenName,
           familyName,
           additionalGivenName,
@@ -160,6 +163,7 @@ export async function identityRoutes(app: FastifyInstance) {
     const {
       validFrom,
       validTo,
+      courtesyTitle,
       givenName,
       familyName,
       additionalGivenName,
@@ -180,6 +184,7 @@ export async function identityRoutes(app: FastifyInstance) {
           ...(validTo !== undefined && {
             validTo: validTo ? new Date(validTo) : null,
           }),
+          courtesyTitle,
           givenName,
           familyName,
           additionalGivenName,

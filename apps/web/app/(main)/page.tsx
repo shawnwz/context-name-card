@@ -71,6 +71,7 @@ export default async function Home() {
               <div className="min-w-0 flex-1 flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium truncate">
+                    {identity.courtesyTitle && `${identity.courtesyTitle} `}
                     {identity.displayName}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
@@ -82,6 +83,7 @@ export default async function Home() {
                       identity={{
                         id: identity.id,
                         contextName: identity.context.name,
+                        courtesyTitle: identity.courtesyTitle,
                         givenName: identity.givenName,
                         familyName: identity.familyName,
                         additionalGivenName: identity.additionalGivenName,

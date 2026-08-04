@@ -98,6 +98,7 @@ model Identity {
   validFrom DateTime
   validTo   DateTime?
 
+  courtesyTitle       String?
   givenName           String
   familyName          String
   additionalGivenName String?

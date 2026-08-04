@@ -11,7 +11,7 @@ function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL ?? "";
   if (url.includes("connection_limit")) return url;
   const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}connection_limit=3`;
+  return `${url}${separator}connection_limit=2`;
 }
 
 export const prisma =
