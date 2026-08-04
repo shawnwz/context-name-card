@@ -16,12 +16,17 @@ RUN turbo prune api --docker
 FROM base AS installer
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-RUN npm install -g pnpm
 
 # Install deps first, from the pruned lockfile/package.json set only.
 # --ignore-scripts because @repo/database's postinstall runs `prisma generate`,
 # which needs prisma/schema.prisma — not present yet at this point.
 COPY --from=builder /app/out/json/ .
+
+# corepack reads packageManager from package.json and installs that exact
+# pnpm version — a bare `npm install -g pnpm` drifts to whatever's newest,
+# which broke once already (pnpm 11's lockfile format isn't compatible with
+# what pnpm 9, pinned here, generated).
+RUN corepack enable && corepack install
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Now bring in the pruned source (incl. prisma/schema.prisma), generate the
