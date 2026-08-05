@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "../../auth";
 import { CreateIdentityDialog } from "../../components/create-identity-dialog";
 import { EditIdentityDialog } from "../../components/edit-identity-dialog";
@@ -6,30 +7,54 @@ import { ShareIdentityButton } from "../../components/share-identity-button";
 import { prisma } from "@repo/database";
 import { getIdentityHeadImage, toCssImageUrl } from "../../lib/placeholder-heads";
 
-export default async function Home() {
+const PAGE_SIZE = 5;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
     return <LandingPage />;
   }
 
-  const [systemContexts, userContexts, identities] = await Promise.all([
-    prisma.identityContext.findMany({
-      where: { userId: null },
-      orderBy: { name: "asc" },
-    }),
-    prisma.identityContext.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: "asc" },
-    }),
-    prisma.identity.findMany({
-      where: { userId: session.user.id },
-      include: { context: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const { page: pageParam } = await searchParams;
 
-  const usedContextIds = new Set(identities.map((i) => i.contextId));
+  // Fetched separately from the paginated list below — this needs to reflect
+  // ALL of the user's identities, not just the current page, otherwise a
+  // context used only by an identity on another page would wrongly show as
+  // "available" when creating a new identity.
+  const [systemContexts, userContexts, allIdentityContextIds, totalCount] =
+    await Promise.all([
+      prisma.identityContext.findMany({
+        where: { userId: null },
+        orderBy: { name: "asc" },
+      }),
+      prisma.identityContext.findMany({
+        where: { userId: session.user.id },
+        orderBy: { name: "asc" },
+      }),
+      prisma.identity.findMany({
+        where: { userId: session.user.id },
+        select: { contextId: true },
+      }),
+      prisma.identity.count({ where: { userId: session.user.id } }),
+    ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
+  const identities = await prisma.identity.findMany({
+    where: { userId: session.user.id },
+    include: { context: true },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+
+  const usedContextIds = new Set(allIdentityContextIds.map((i) => i.contextId));
   const availableSystemContexts = systemContexts.filter(
     (c) => !usedContextIds.has(c.id),
   );
@@ -111,6 +136,36 @@ export default async function Home() {
             </li>
           ))}
         </ul>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <Link
+            href={`?page=${page - 1}`}
+            aria-disabled={page <= 1}
+            className={`text-sm transition-colors ${
+              page <= 1
+                ? "text-black/25 dark:text-white/25 pointer-events-none"
+                : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            ← Previous
+          </Link>
+          <span className="text-xs text-black/40 dark:text-white/40">
+            Page {page} of {totalPages}
+          </span>
+          <Link
+            href={`?page=${page + 1}`}
+            aria-disabled={page >= totalPages}
+            className={`text-sm transition-colors ${
+              page >= totalPages
+                ? "text-black/25 dark:text-white/25 pointer-events-none"
+                : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            Next →
+          </Link>
+        </div>
       )}
     </main>
   );

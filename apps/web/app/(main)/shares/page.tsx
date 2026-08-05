@@ -5,6 +5,7 @@ import { auth } from "../../../auth";
 import { prisma } from "@repo/database";
 import { RevokeShareButton } from "../../../components/revoke-share-button";
 import { getIdentityHeadImage, toCssImageUrl } from "../../../lib/placeholder-heads";
+import { DEFAULT_TEMPLATE, TEMPLATES, isTemplateId } from "../../../components/name-card-templates";
 
 async function getOrigin() {
   const h = await headers();
@@ -92,6 +93,21 @@ export default async function SharesPage() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      {(() => {
+                        const templateId = isTemplateId(share.template)
+                          ? share.template
+                          : DEFAULT_TEMPLATE;
+                        const template = TEMPLATES[templateId];
+                        return (
+                          <span className="flex items-center gap-1.5 text-xs text-black/40 dark:text-white/40">
+                            <span
+                              className="size-2.5 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+                              style={{ backgroundColor: template.swatch }}
+                            />
+                            {template.label}
+                          </span>
+                        );
+                      })()}
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${
                           status === "active"

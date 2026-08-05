@@ -2,8 +2,11 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { prisma } from "@repo/database";
 
+const VALID_TEMPLATES = new Set(["gradient", "minimal", "professional"]);
+
 type CreateShareBody = {
   expiresAt?: string;
+  template?: string;
 };
 
 export async function publicShareRoutes(app: FastifyInstance) {
@@ -29,7 +32,7 @@ export async function publicShareRoutes(app: FastifyInstance) {
         return reply.status(410).send({ error: "Share has expired" });
       }
 
-      return share.identity;
+      return { ...share.identity, template: share.template };
     },
   );
 }
@@ -52,13 +55,18 @@ export async function shareRoutes(app: FastifyInstance) {
         return reply.status(403).send({ error: "Forbidden" });
       }
 
-      const { expiresAt } = request.body ?? {};
+      const { expiresAt, template } = request.body ?? {};
+
+      if (template !== undefined && !VALID_TEMPLATES.has(template)) {
+        return reply.status(400).send({ error: "Invalid template" });
+      }
 
       const share = await prisma.identityShare.create({
         data: {
           token: randomBytes(9).toString("base64url"),
           identityId: identity.id,
           expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+          ...(template && { template }),
         },
       });
 

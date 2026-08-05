@@ -123,6 +123,7 @@ model IdentityShare {
   id         String    @id @default(cuid())
   token      String    @unique
   identityId String
+  template   String    @default("gradient")
   createdAt  DateTime  @default(now())
   expiresAt  DateTime?
   revokedAt  DateTime?
