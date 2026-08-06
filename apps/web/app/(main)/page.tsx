@@ -1,35 +1,66 @@
+import Link from "next/link";
 import { auth } from "../../auth";
 import { CreateIdentityDialog } from "../../components/create-identity-dialog";
 import { EditIdentityDialog } from "../../components/edit-identity-dialog";
 import { DeleteIdentityButton } from "../../components/delete-identity-button";
-import { ShareIdentityButton } from "../../components/share-identity-button";
+import { IdentityTemplateGallery } from "../../components/identity-template-gallery";
 import { prisma } from "@repo/database";
 import { getIdentityHeadImage, toCssImageUrl } from "../../lib/placeholder-heads";
 
-export default async function Home() {
+const PAGE_SIZE = 5;
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; identity?: string }>;
+}) {
   const session = await auth();
 
   if (!session?.user) {
     return <LandingPage />;
   }
 
-  const [systemContexts, userContexts, identities] = await Promise.all([
-    prisma.identityContext.findMany({
-      where: { userId: null },
-      orderBy: { name: "asc" },
-    }),
-    prisma.identityContext.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: "asc" },
-    }),
-    prisma.identity.findMany({
-      where: { userId: session.user.id },
-      include: { context: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const { page: pageParam, identity: selectedId } = await searchParams;
 
-  const usedContextIds = new Set(identities.map((i) => i.contextId));
+  // Fetched separately from the paginated list below — this needs to reflect
+  // ALL of the user's identities, not just the current page, otherwise a
+  // context used only by an identity on another page would wrongly show as
+  // "available" when creating a new identity.
+  const [systemContexts, userContexts, allIdentityContextIds, totalCount] =
+    await Promise.all([
+      prisma.identityContext.findMany({
+        where: { userId: null },
+        orderBy: { name: "asc" },
+      }),
+      prisma.identityContext.findMany({
+        where: { userId: session.user.id },
+        orderBy: { name: "asc" },
+      }),
+      prisma.identity.findMany({
+        where: { userId: session.user.id },
+        select: { contextId: true },
+      }),
+      prisma.identity.count({ where: { userId: session.user.id } }),
+    ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
+  const identities = await prisma.identity.findMany({
+    where: { userId: session.user.id },
+    include: { context: true },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+
+  const selectedIdentity = selectedId
+    ? await prisma.identity.findFirst({
+        where: { id: selectedId, userId: session.user.id },
+      })
+    : null;
+
+  const usedContextIds = new Set(allIdentityContextIds.map((i) => i.contextId));
   const availableSystemContexts = systemContexts.filter(
     (c) => !usedContextIds.has(c.id),
   );
@@ -38,47 +69,56 @@ export default async function Home() {
   );
 
   return (
-    <main className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Identities</h1>
-        <CreateIdentityDialog
-          userId={session.user.id}
-          systemContexts={availableSystemContexts}
-          userContexts={availableUserContexts}
-        />
-      </div>
+    <main className="max-w-6xl mx-auto px-6 py-10 flex gap-8 items-start">
+      {/* List column */}
+      <div className="w-full sm:w-80 shrink-0 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Identities</h1>
+          <CreateIdentityDialog
+            userId={session.user.id}
+            systemContexts={availableSystemContexts}
+            userContexts={availableUserContexts}
+          />
+        </div>
 
-      {identities.length === 0 ? (
-        <p className="text-sm text-black/40 dark:text-white/40">
-          No identities yet. Create one to get started.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {identities.map((identity) => (
-            <li
-              key={identity.id}
-              className="border border-black/8 dark:border-white/10 rounded-xl p-4 flex gap-3"
-            >
-              <div
-                aria-hidden="true"
-                className="size-12 shrink-0 rounded-full bg-cover bg-center ring-1 ring-black/10 dark:ring-white/15"
-                style={{
-                  backgroundImage: toCssImageUrl(
-                    getIdentityHeadImage(identity),
-                  ),
-                }}
-              />
-              <div className="min-w-0 flex-1 flex flex-col gap-1">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-medium truncate">
-                    {identity.courtesyTitle && `${identity.courtesyTitle} `}
-                    {identity.displayName}
-                  </span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
-                      {identity.context.name}
-                    </span>
-                    <ShareIdentityButton identityId={identity.id} />
+        {identities.length === 0 ? (
+          <p className="text-sm text-black/40 dark:text-white/40">
+            No identities yet. Create one to get started.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {identities.map((identity) => {
+              const isSelected = identity.id === selectedIdentity?.id;
+              return (
+                <li
+                  key={identity.id}
+                  className={`border rounded-xl p-3 flex flex-col gap-2 transition-colors ${
+                    isSelected
+                      ? "border-black/30 dark:border-white/30 bg-black/[0.03] dark:bg-white/[0.04]"
+                      : "border-black/8 dark:border-white/10"
+                  }`}
+                >
+                  <Link href={`?identity=${identity.id}`} className="flex gap-3 min-w-0">
+                    <div
+                      aria-hidden="true"
+                      className="size-10 shrink-0 rounded-full bg-cover bg-center ring-1 ring-black/10 dark:ring-white/15"
+                      style={{
+                        backgroundImage: toCssImageUrl(
+                          getIdentityHeadImage(identity),
+                        ),
+                      }}
+                    />
+                    <div className="min-w-0 flex-1 flex flex-col">
+                      <span className="font-medium text-sm truncate hover:underline">
+                        {identity.courtesyTitle && `${identity.courtesyTitle} `}
+                        {identity.displayName}
+                      </span>
+                      <span className="text-xs text-black/40 dark:text-white/40 truncate">
+                        {identity.context.name}
+                      </span>
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <EditIdentityDialog
                       identity={{
                         id: identity.id,
@@ -100,18 +140,65 @@ export default async function Home() {
                     />
                     <DeleteIdentityButton identityId={identity.id} />
                   </div>
-                </div>
-                <span className="text-xs text-black/40 dark:text-white/40">
-                  Valid from {identity.validFrom.toLocaleDateString()}
-                  {identity.validTo
-                    ? ` · until ${identity.validTo.toLocaleDateString()}`
-                    : ""}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <Link
+              href={`?page=${page - 1}`}
+              aria-disabled={page <= 1}
+              className={`text-sm transition-colors ${
+                page <= 1
+                  ? "text-black/25 dark:text-white/25 pointer-events-none"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              ← Previous
+            </Link>
+            <span className="text-xs text-black/40 dark:text-white/40">
+              Page {page} of {totalPages}
+            </span>
+            <Link
+              href={`?page=${page + 1}`}
+              aria-disabled={page >= totalPages}
+              className={`text-sm transition-colors ${
+                page >= totalPages
+                  ? "text-black/25 dark:text-white/25 pointer-events-none"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              Next →
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Detail column */}
+      <div className="flex-1 min-w-0 hidden sm:block">
+        {selectedIdentity ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold">
+                {selectedIdentity.courtesyTitle && `${selectedIdentity.courtesyTitle} `}
+                {selectedIdentity.displayName}
+              </h2>
+            </div>
+            <p className="text-sm text-black/50 dark:text-white/50">
+              A preview of every name-card look currently available. More
+              templates are on the way.
+            </p>
+            <IdentityTemplateGallery identity={selectedIdentity} />
+          </div>
+        ) : (
+          <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[400px]">
+            Select an identity to preview its name card
+          </div>
+        )}
+      </div>
     </main>
   );
 }
