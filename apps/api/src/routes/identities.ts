@@ -3,7 +3,6 @@ import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { prisma } from "@repo/database";
 
 type IdentityBody = {
-  userId: string;
   contextId: string;
   validFrom: string;
   validTo?: string;
@@ -20,7 +19,7 @@ type IdentityBody = {
   tel?: string;
 };
 
-type IdentityPatchBody = Partial<Omit<IdentityBody, "userId" | "contextId">>;
+type IdentityPatchBody = Partial<Omit<IdentityBody, "contextId">>;
 
 const allowedHeadImageTypes = new Set([
   "image/jpeg",
@@ -55,8 +54,8 @@ function getS3Config() {
 export async function identityRoutes(app: FastifyInstance) {
   // Create
   app.post<{ Body: IdentityBody }>("/identities", async (request, reply) => {
+    const userId = request.userId;
     const {
-      userId,
       contextId,
       validFrom,
       validTo,
@@ -73,17 +72,10 @@ export async function identityRoutes(app: FastifyInstance) {
       tel,
     } = request.body;
 
-    if (
-      !userId ||
-      !contextId ||
-      !validFrom ||
-      !givenName ||
-      !familyName ||
-      !displayName
-    ) {
+    if (!contextId || !validFrom || !givenName || !familyName || !displayName) {
       return reply.status(400).send({
         error:
-          "userId, contextId, validFrom, givenName, familyName, and displayName are required",
+          "contextId, validFrom, givenName, familyName, and displayName are required",
       });
     }
 
@@ -139,6 +131,10 @@ export async function identityRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: "Identity not found" });
       }
 
+      if (identity.userId !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       return identity;
     },
   );
@@ -147,6 +143,10 @@ export async function identityRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>(
     "/users/:id/identities",
     async (request, reply) => {
+      if (request.params.id !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       const identities = await prisma.identity.findMany({
         where: { userId: request.params.id },
         include: { context: true },
@@ -160,6 +160,19 @@ export async function identityRoutes(app: FastifyInstance) {
     Params: { id: string };
     Body: IdentityPatchBody;
   }>("/identities/:id", async (request, reply) => {
+    const existing = await prisma.identity.findUnique({
+      where: { id: request.params.id },
+      select: { userId: true },
+    });
+
+    if (!existing) {
+      return reply.status(404).send({ error: "Identity not found" });
+    }
+
+    if (existing.userId !== request.userId) {
+      return reply.status(403).send({ error: "Forbidden" });
+    }
+
     const {
       validFrom,
       validTo,
@@ -269,6 +282,19 @@ export async function identityRoutes(app: FastifyInstance) {
   app.delete<{ Params: { id: string } }>(
     "/identities/:id",
     async (request, reply) => {
+      const existing = await prisma.identity.findUnique({
+        where: { id: request.params.id },
+        select: { userId: true },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({ error: "Identity not found" });
+      }
+
+      if (existing.userId !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       try {
         await prisma.identity.delete({
           where: { id: request.params.id },

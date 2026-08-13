@@ -4,9 +4,9 @@ import { prisma } from "@repo/database";
 export async function identityContextRoutes(app: FastifyInstance) {
   // Create
   app.post<{
-    Body: { name: string; userId?: string };
+    Body: { name: string };
   }>("/identity-contexts", async (request, reply) => {
-    const { name, userId } = request.body;
+    const { name } = request.body;
 
     if (!name) {
       return reply.status(400).send({ error: "name is required" });
@@ -14,7 +14,7 @@ export async function identityContextRoutes(app: FastifyInstance) {
 
     try {
       const context = await prisma.identityContext.create({
-        data: { name, userId },
+        data: { name, userId: request.userId },
       });
       return reply.status(201).send(context);
     } catch (err: any) {
@@ -38,6 +38,10 @@ export async function identityContextRoutes(app: FastifyInstance) {
         return reply.status(404).send({ error: "IdentityContext not found" });
       }
 
+      if (context.userId !== null && context.userId !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       return context;
     }
   );
@@ -46,6 +50,10 @@ export async function identityContextRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>(
     "/users/:id/identity-contexts",
     async (request, reply) => {
+      if (request.params.id !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       const contexts = await prisma.identityContext.findMany({
         where: { userId: request.params.id },
         include: { identities: true },
@@ -60,6 +68,19 @@ export async function identityContextRoutes(app: FastifyInstance) {
     Body: { name?: string };
   }>("/identity-contexts/:id", async (request, reply) => {
     const { name } = request.body;
+
+    const existing = await prisma.identityContext.findUnique({
+      where: { id: request.params.id },
+      select: { userId: true },
+    });
+
+    if (!existing) {
+      return reply.status(404).send({ error: "IdentityContext not found" });
+    }
+
+    if (existing.userId === null || existing.userId !== request.userId) {
+      return reply.status(403).send({ error: "Forbidden" });
+    }
 
     try {
       const context = await prisma.identityContext.update({
@@ -82,6 +103,19 @@ export async function identityContextRoutes(app: FastifyInstance) {
   app.delete<{ Params: { id: string } }>(
     "/identity-contexts/:id",
     async (request, reply) => {
+      const existing = await prisma.identityContext.findUnique({
+        where: { id: request.params.id },
+        select: { userId: true },
+      });
+
+      if (!existing) {
+        return reply.status(404).send({ error: "IdentityContext not found" });
+      }
+
+      if (existing.userId === null || existing.userId !== request.userId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
       try {
         await prisma.identityContext.delete({
           where: { id: request.params.id },
