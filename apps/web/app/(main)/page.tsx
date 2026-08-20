@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { auth } from "../../auth";
 import { CreateIdentityDialog } from "../../components/create-identity-dialog";
 import { EditIdentityDialog } from "../../components/edit-identity-dialog";
 import { DeleteIdentityButton } from "../../components/delete-identity-button";
-import { IdentityTemplateGallery } from "../../components/identity-template-gallery";
+import { IdentityDetailPanel } from "../../components/identity-detail-panel";
+import { Spinner } from "../../components/spinner";
 import { prisma } from "@repo/database";
 import { getIdentityHeadImage, toCssImageUrl } from "../../lib/placeholder-heads";
 
@@ -54,12 +56,6 @@ export default async function Home({
     take: PAGE_SIZE,
   });
 
-  const selectedIdentity = selectedId
-    ? await prisma.identity.findFirst({
-        where: { id: selectedId, userId: session.user.id },
-      })
-    : null;
-
   const usedContextIds = new Set(allIdentityContextIds.map((i) => i.contextId));
   const availableSystemContexts = systemContexts.filter(
     (c) => !usedContextIds.has(c.id),
@@ -69,7 +65,7 @@ export default async function Home({
   );
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10 flex gap-8 items-start">
+    <main className="max-w-6xl px-10 py-10 flex gap-8 items-start">
       {/* List column */}
       <div className="w-full sm:w-80 shrink-0 flex flex-col gap-4">
         <div className="flex items-center justify-between">
@@ -88,7 +84,7 @@ export default async function Home({
         ) : (
           <ul className="flex flex-col gap-3">
             {identities.map((identity) => {
-              const isSelected = identity.id === selectedIdentity?.id;
+              const isSelected = identity.id === selectedId;
               return (
                 <li
                   key={identity.id}
@@ -179,20 +175,17 @@ export default async function Home({
 
       {/* Detail column */}
       <div className="flex-1 min-w-0 hidden sm:block">
-        {selectedIdentity ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold">
-                {selectedIdentity.courtesyTitle && `${selectedIdentity.courtesyTitle} `}
-                {selectedIdentity.displayName}
-              </h2>
-            </div>
-            <p className="text-sm text-black/50 dark:text-white/50">
-              A preview of every name-card look currently available. More
-              templates are on the way.
-            </p>
-            <IdentityTemplateGallery identity={selectedIdentity} />
-          </div>
+        {selectedId ? (
+          <Suspense
+            key={selectedId}
+            fallback={
+              <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center min-h-[400px]">
+                <Spinner className="h-6 w-6 text-black/30 dark:text-white/30" />
+              </div>
+            }
+          >
+            <IdentityDetailPanel userId={session.user.id} identityId={selectedId} />
+          </Suspense>
         ) : (
           <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[400px]">
             Select an identity to preview its name card

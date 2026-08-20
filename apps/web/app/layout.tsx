@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
+import { VersionBadge } from "../components/version-badge";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <VersionBadge />
       </body>
     </html>
   );
