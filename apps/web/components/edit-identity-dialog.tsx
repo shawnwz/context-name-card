@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import { COURTESY_TITLES } from "../lib/courtesy-titles";
+import { BackgroundPicker } from "./background-picker";
 
 export type EditableIdentity = {
   id: string;
@@ -17,6 +18,7 @@ export type EditableIdentity = {
   validFrom: string;
   validTo: string | null;
   image: string | null;
+  background: string | null;
   email: string | null;
   description: string | null;
   location: string | null;
@@ -61,6 +63,7 @@ export function EditIdentityDialog({ identity }: Props) {
     const description = (form.get("description") as string).trim();
     const location = (form.get("location") as string).trim();
     const tel = (form.get("tel") as string).trim();
+    const background = (form.get("background") as string) || null;
     const headImage = form.get("headImage");
 
     const res = await fetch(`/api/proxy/identities/${identity.id}`, {
@@ -79,6 +82,7 @@ export function EditIdentityDialog({ identity }: Props) {
         description: description || null,
         location: location || null,
         tel: tel || null,
+        background,
       }),
     });
 
@@ -287,6 +291,13 @@ export function EditIdentityDialog({ identity }: Props) {
                     accept="image/png,image/jpeg,image/webp"
                     className={inputClass}
                   />
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Card background (used by the Cover template)
+                  </label>
+                  <BackgroundPicker defaultValue={identity.background} />
                 </div>
 
                 {error && (

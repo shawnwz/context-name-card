@@ -13,6 +13,7 @@ type IdentityBody = {
   secondaryFamilyName?: string;
   displayName: string;
   image?: string;
+  background?: string;
   email?: string;
   description?: string;
   location?: string;
@@ -66,6 +67,7 @@ export async function identityRoutes(app: FastifyInstance) {
       secondaryFamilyName,
       displayName,
       image,
+      background,
       email,
       description,
       location,
@@ -93,6 +95,7 @@ export async function identityRoutes(app: FastifyInstance) {
           secondaryFamilyName,
           displayName,
           image,
+          background,
           email,
           description,
           location,
@@ -183,6 +186,7 @@ export async function identityRoutes(app: FastifyInstance) {
       secondaryFamilyName,
       displayName,
       image,
+      background,
       email,
       description,
       location,
@@ -204,6 +208,7 @@ export async function identityRoutes(app: FastifyInstance) {
           secondaryFamilyName,
           displayName,
           image,
+          background,
           email,
           description,
           location,

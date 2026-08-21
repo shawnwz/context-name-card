@@ -106,6 +106,7 @@ model Identity {
   displayName         String
 
   image       String?
+  background  String?
   email       String?
   description String?
   location    String?

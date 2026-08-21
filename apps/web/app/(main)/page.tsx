@@ -65,9 +65,9 @@ export default async function Home({
   );
 
   return (
-    <main className="max-w-6xl px-10 py-10 flex gap-8 items-start">
+    <main className="max-w-6xl xl:max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex flex-col sm:flex-row gap-6 sm:gap-0">
       {/* List column */}
-      <div className="w-full sm:w-80 shrink-0 flex flex-col gap-4">
+      <div className="w-full sm:w-80 shrink-0 flex flex-col gap-4 sm:pr-8">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">Identities</h1>
           <CreateIdentityDialog
@@ -128,6 +128,7 @@ export default async function Home({
                         validFrom: identity.validFrom.toISOString(),
                         validTo: identity.validTo?.toISOString() ?? null,
                         image: identity.image,
+                        background: identity.background,
                         email: identity.email,
                         description: identity.description,
                         location: identity.location,
@@ -173,13 +174,19 @@ export default async function Home({
         )}
       </div>
 
+      {/* Divider — only shown once the columns sit side by side */}
+      <div
+        aria-hidden="true"
+        className="hidden sm:block w-px shrink-0 bg-black/10 dark:bg-white/10"
+      />
+
       {/* Detail column */}
-      <div className="flex-1 min-w-0 hidden sm:block">
+      <div className="flex-1 min-w-0 sm:pl-8">
         {selectedId ? (
           <Suspense
             key={selectedId}
             fallback={
-              <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center min-h-[400px]">
+              <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center min-h-[200px] sm:min-h-[400px]">
                 <Spinner className="h-6 w-6 text-black/30 dark:text-white/30" />
               </div>
             }
@@ -187,7 +194,7 @@ export default async function Home({
             <IdentityDetailPanel userId={session.user.id} identityId={selectedId} />
           </Suspense>
         ) : (
-          <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[400px]">
+          <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[200px] sm:min-h-[400px]">
             Select an identity to preview its name card
           </div>
         )}

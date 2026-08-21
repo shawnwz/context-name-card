@@ -14,7 +14,7 @@ export async function IdentityDetailPanel({
 
   if (!identity) {
     return (
-      <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[400px]">
+      <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[200px] sm:min-h-[400px]">
         Identity not found.
       </div>
     );

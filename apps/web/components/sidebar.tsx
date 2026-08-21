@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { auth, signOut } from "../auth";
 import { SidebarNavLinks } from "./sidebar-nav-links";
+import { SidebarShell } from "./sidebar-shell";
 
 export async function Sidebar() {
   const session = await auth();
 
   return (
-    <aside className="w-56 shrink-0 h-svh sticky top-0 overflow-y-auto flex flex-col justify-between px-4 py-6 border-r border-white/10 bg-gradient-to-b from-purple-950 to-violet-900">
+    <SidebarShell>
       <div className="flex flex-col gap-6">
         <Link
           href="/"
@@ -36,6 +37,6 @@ export async function Sidebar() {
           </form>
         </div>
       )}
-    </aside>
+    </SidebarShell>
   );
 }

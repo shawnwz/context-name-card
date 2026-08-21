@@ -46,6 +46,13 @@ export function getPlaceholderHeadImage(seed: string, name?: string): string {
   return svgToDataUri(svg);
 }
 
+// Same deterministic hash as the placeholder avatar, exposed so templates
+// can theme accents (patterns, rules, icon tints) to match — an identity's
+// accent color stays consistent whether or not it has a real photo.
+export function getAccentColor(seed: string): string {
+  return AVATAR_COLORS[hashString(seed) % AVATAR_COLORS.length]!;
+}
+
 export function getIdentityHeadImage(identity: {
   id: string;
   image: string | null;
