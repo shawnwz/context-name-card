@@ -1,3 +1,6 @@
+import { CoverCard, CoverTemplate, coverPageClass } from "./cover";
+import { DuotoneCard, DuotoneTemplate, duotonePageClass } from "./duotone";
+import { GeometricCard, GeometricTemplate, geometricPageClass } from "./geometric";
 import { GradientCard, GradientTemplate, gradientPageClass } from "./gradient";
 import { MinimalCard, MinimalTemplate, minimalPageClass } from "./minimal";
 import { ProfessionalCard, ProfessionalTemplate, professionalPageClass } from "./professional";
@@ -26,6 +29,27 @@ export const TEMPLATES = {
     pageClass: professionalPageClass,
     Component: ProfessionalTemplate,
     Card: ProfessionalCard,
+  },
+  duotone: {
+    label: "Duotone",
+    swatch: "#4338ca",
+    pageClass: duotonePageClass,
+    Component: DuotoneTemplate,
+    Card: DuotoneCard,
+  },
+  geometric: {
+    label: "Geometric",
+    swatch: "#059669",
+    pageClass: geometricPageClass,
+    Component: GeometricTemplate,
+    Card: GeometricCard,
+  },
+  cover: {
+    label: "Cover",
+    swatch: "#0369a1",
+    pageClass: coverPageClass,
+    Component: CoverTemplate,
+    Card: CoverCard,
   },
 } as const;
 

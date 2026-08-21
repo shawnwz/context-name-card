@@ -7,7 +7,7 @@ export const gradientPageClass =
 
 export function GradientCard({ identity }: { identity: NameCardIdentity }) {
   return (
-    <div className="w-full max-w-sm bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4">
+    <div className="w-full max-w-sm bg-gradient-to-br from-purple-950 via-purple-900 to-violet-800 border border-white/20 rounded-3xl p-8 shadow-2xl flex flex-col items-center gap-4">
       <div
         className="size-20 rounded-full bg-cover bg-center ring-2 ring-white/20"
         style={{ backgroundImage: toCssImageUrl(getIdentityHeadImage(identity)) }}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import { COURTESY_TITLES } from "../lib/courtesy-titles";
+import { BackgroundPicker } from "./background-picker";
 import {
   getPlaceholderHeadImage,
   toCssImageUrl,
@@ -177,12 +178,16 @@ function NameCardStep({
   onChange,
   file,
   onFileChange,
+  background,
+  onBackgroundChange,
 }: {
   identityId: string;
   data: NamesStep;
   onChange: (d: NamesStep) => void;
   file: File | null;
   onFileChange: (f: File | null) => void;
+  background: string | null;
+  onBackgroundChange: (b: string | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -322,6 +327,11 @@ function NameCardStep({
         />
       </div>
 
+      <div>
+        <p className={labelClass}>Card background (used by the Cover template)</p>
+        <BackgroundPicker value={background} onChange={onBackgroundChange} />
+      </div>
+
       {/* Legal name — required for the identity record, kept secondary to the card */}
       <div>
         <p className={labelClass}>Legal name</p>
@@ -416,6 +426,7 @@ export function CreateIdentityDialog({
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [background, setBackground] = useState<string | null>(null);
 
   // Stable placeholder seed before we have a real identity id
   const placeholderSeed = `${userId}-new`;
@@ -443,6 +454,7 @@ export function CreateIdentityDialog({
       validTo: "",
     });
     setPhotoFile(null);
+    setBackground(null);
     setOpen(true);
   }
 
@@ -520,6 +532,7 @@ export function CreateIdentityDialog({
           location: namesData.location.trim(),
         }),
         ...(namesData.tel.trim() && { tel: namesData.tel.trim() }),
+        ...(background && { background }),
       }),
     });
 
@@ -592,6 +605,8 @@ export function CreateIdentityDialog({
                   onChange={setNamesData}
                   file={photoFile}
                   onFileChange={setPhotoFile}
+                  background={background}
+                  onBackgroundChange={setBackground}
                 />
               )}
 

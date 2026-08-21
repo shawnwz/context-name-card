@@ -2,7 +2,14 @@ import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { prisma } from "@repo/database";
 
-const VALID_TEMPLATES = new Set(["gradient", "minimal", "professional"]);
+const VALID_TEMPLATES = new Set([
+  "gradient",
+  "minimal",
+  "professional",
+  "duotone",
+  "geometric",
+  "cover",
+]);
 
 type CreateShareBody = {
   expiresAt?: string;
