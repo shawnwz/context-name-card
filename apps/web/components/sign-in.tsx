@@ -32,9 +32,9 @@ export function SignIn() {
 
       {/* Divider */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
-        <span className="text-xs text-black/30 dark:text-white/30">or</span>
-        <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-xs text-white/35">or</span>
+        <div className="flex-1 h-px bg-white/10" />
       </div>
 
       {/* Magic link */}
@@ -50,11 +50,11 @@ export function SignIn() {
           name="email"
           placeholder="your@email.com"
           required
-          className="border border-black/15 dark:border-white/15 rounded-lg px-4 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/30 dark:placeholder:text-white/30"
+          className="border border-white/15 rounded-lg px-4 py-2.5 text-sm bg-white/5 text-white outline-none focus:ring-2 focus:ring-white/25 placeholder:text-white/30"
         />
         <button
           type="submit"
-          className="bg-[var(--foreground)] text-[var(--background)] rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer hover:opacity-85 transition-opacity"
+          className="bg-white text-purple-950 rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity"
         >
           Sign in with Email
         </button>

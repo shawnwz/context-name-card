@@ -1,5 +1,4 @@
 import { auth } from "../../auth";
-import { Header } from "../../components/header";
 import { Sidebar } from "../../components/sidebar";
 
 export default async function MainLayout({
@@ -10,12 +9,7 @@ export default async function MainLayout({
   const session = await auth();
 
   if (!session?.user) {
-    return (
-      <>
-        <Header />
-        {children}
-      </>
-    );
+    return <>{children}</>;
   }
 
   return (

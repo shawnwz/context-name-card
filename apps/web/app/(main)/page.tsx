@@ -4,7 +4,10 @@ import { auth } from "../../auth";
 import { CreateIdentityDialog } from "../../components/create-identity-dialog";
 import { EditIdentityDialog } from "../../components/edit-identity-dialog";
 import { DeleteIdentityButton } from "../../components/delete-identity-button";
+import { DotGridBackground } from "../../components/dot-grid-background";
 import { IdentityDetailPanel } from "../../components/identity-detail-panel";
+import { LandingHero } from "../../components/landing-hero";
+import { SignIn } from "../../components/sign-in";
 import { Spinner } from "../../components/spinner";
 import { prisma } from "@repo/database";
 import { getIdentityHeadImage, toCssImageUrl } from "../../lib/placeholder-heads";
@@ -65,7 +68,7 @@ export default async function Home({
   );
 
   return (
-    <main className="max-w-6xl xl:max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex flex-col sm:flex-row gap-6 sm:gap-0">
+    <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex flex-col sm:flex-row gap-6 sm:gap-0">
       {/* List column */}
       <div className="w-full sm:w-80 shrink-0 flex flex-col gap-4 sm:pr-8">
         <div className="flex items-center justify-between">
@@ -205,98 +208,20 @@ export default async function Home({
 
 function LandingPage() {
   return (
-    <div className="blur-on-modal relative min-h-[calc(100svh-56px)] bg-gradient-to-br from-purple-950 via-purple-900 to-violet-800 overflow-hidden">
-      {/* Scattered fake identity cards */}
-      <FakeCard
-        displayName="Emma Wilson"
-        context="Professional"
-        name="Emma C. Wilson"
-        validFrom="Mar 2023"
-        className="-left-6 top-[12%] -rotate-[14deg]"
-      />
-      <FakeCard
-        displayName="Alex Chen"
-        context="Personal"
-        name="Alex K. Chen"
-        validFrom="Jan 2024"
-        className="-right-4 top-[8%] rotate-[10deg]"
-      />
-      <FakeCard
-        displayName="Sarah Johnson"
-        context="Academic"
-        name="Dr. Sarah Johnson"
-        validFrom="Sep 2022"
-        className="left-[4%] bottom-[6%] rotate-[17deg]"
-      />
-      <FakeCard
-        displayName="James Miller"
-        context="Social"
-        name="James R. Miller"
-        validFrom="Jun 2023"
-        className="-right-2 bottom-[10%] -rotate-[8deg]"
-      />
-      <FakeCard
-        displayName="Mei-Ling Wei"
-        context="Family"
-        name="Mei-Ling Wei"
-        validFrom="Dec 2021"
-        className="left-[30%] -top-4 -rotate-[5deg]"
-      />
-      <FakeCard
-        displayName="María Santos"
-        context="Work"
-        name="María A. Santos"
-        validFrom="Feb 2024"
-        className="right-[24%] -bottom-4 rotate-[6deg]"
-      />
-      <FakeCard
-        displayName="Liam O'Brien"
-        context="Personal"
-        name="Liam P. O'Brien"
-        validFrom="Apr 2023"
-        className="left-[18%] bottom-[22%] -rotate-[20deg] opacity-50"
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-gradient-to-br from-purple-950 via-purple-900 to-violet-800">
+      {/* Dot grid, brand purple, softly vignetted around the hero */}
+      <DotGridBackground vignette />
+
+      {/* Ambient glow behind the mark */}
+      <div
+        aria-hidden="true"
+        className="absolute size-[420px] rounded-full bg-violet-500/25 blur-[110px]"
       />
 
       {/* Hero */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-6 pointer-events-none">
-        <h1 className="text-6xl font-bold text-white tracking-tight drop-shadow-lg mb-3">
-          ContextID
-        </h1>
-        <p className="text-white/60 text-lg max-w-xs">
-          One identity for every context
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function FakeCard({
-  displayName,
-  context,
-  name,
-  validFrom,
-  className,
-}: {
-  displayName: string;
-  context: string;
-  name: string;
-  validFrom: string;
-  className: string;
-}) {
-  return (
-    <div
-      className={`absolute w-60 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-2xl select-none ${className}`}
-    >
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <span className="font-semibold text-white text-sm leading-tight">
-          {displayName}
-        </span>
-        <span className="shrink-0 text-[10px] bg-white/20 text-white/80 px-2 py-0.5 rounded-full">
-          {context}
-        </span>
-      </div>
-      <div className="text-white/50 text-xs mb-1">{name}</div>
-      <div className="text-white/30 text-[10px]">Valid from {validFrom}</div>
+      <LandingHero>
+        <SignIn />
+      </LandingHero>
     </div>
   );
 }

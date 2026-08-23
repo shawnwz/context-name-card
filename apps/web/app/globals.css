@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #faf9fc;
   --foreground: #171717;
 }
 
@@ -15,12 +15,4 @@
 body {
   color: var(--foreground);
   background: var(--background);
-}
-
-.blur-on-modal {
-  transition: filter 0.3s ease;
-}
-
-body[data-modal-open] .blur-on-modal {
-  filter: blur(8px);
 }
