@@ -10,9 +10,9 @@ export function OAuthButton({ children }: { children: React.ReactNode }) {
     <button
       type="submit"
       disabled={pending}
-      className="w-full flex items-center justify-center gap-3 border border-black/15 dark:border-white/15 rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      className="w-full flex items-center justify-center gap-3 border border-white/15 text-white rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-white/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
     >
-      {pending ? <Spinner /> : children}
+      {pending ? <Spinner className="h-4 w-4 text-white/70" /> : children}
     </button>
   );
 }

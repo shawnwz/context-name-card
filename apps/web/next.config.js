@@ -26,6 +26,10 @@ const nextConfig = {
   // "Cannot find module '@prisma/client-<hash>'". This makes Next require
   // @prisma/client normally from node_modules instead.
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  // Lets the dev server be reached from another device on the LAN (e.g.
+  // testing on a phone) without the cross-origin dev-resource block. Update
+  // this if your machine's LAN IP changes.
+  allowedDevOrigins: ["192.168.1.79"],
   turbopack: {
     root: monorepoRoot,
   },

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { DotGridBackground } from "./dot-grid-background";
 
 // Below `lg` the sidebar becomes an off-canvas drawer (hidden by default,
 // toggled by the mobile top bar) instead of a permanently-visible 224px
@@ -18,16 +19,17 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 px-4 h-14 border-b border-white/10 bg-gradient-to-r from-purple-950 to-violet-900">
+      <div className="lg:hidden sticky top-0 z-30 relative flex items-center gap-3 px-4 h-14 border-b border-white/10 bg-gradient-to-r from-purple-950 to-violet-900 overflow-hidden">
+        <DotGridBackground />
         <button
           type="button"
           onClick={() => setIsOpen(true)}
           aria-label="Open menu"
-          className="text-white/80 hover:text-white transition-colors p-1 -ml-1"
+          className="relative z-10 text-white/80 hover:text-white transition-colors p-1 -ml-1"
         >
           <Menu className="size-5" />
         </button>
-        <span className="text-base font-semibold tracking-tight text-white">
+        <span className="relative z-10 text-base font-semibold tracking-tight text-white">
           ContextID
         </span>
       </div>
@@ -41,19 +43,22 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
       )}
 
       <aside
-        className={`w-56 shrink-0 h-svh fixed lg:sticky top-0 left-0 z-50 lg:z-auto flex flex-col justify-between px-4 py-6 border-r border-white/10 bg-gradient-to-b from-purple-950 to-violet-900 overflow-y-auto transition-transform duration-200 -translate-x-full lg:translate-x-0 ${
+        className={`w-56 shrink-0 h-svh fixed lg:sticky top-0 left-0 z-50 lg:z-auto border-r border-white/10 bg-gradient-to-b from-purple-950 to-violet-900 overflow-y-auto transition-transform duration-200 -translate-x-full lg:translate-x-0 ${
           isOpen ? "translate-x-0" : ""
         }`}
       >
+        <DotGridBackground />
         <button
           type="button"
           onClick={() => setIsOpen(false)}
           aria-label="Close menu"
-          className="lg:hidden absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
+          className="lg:hidden absolute top-4 right-4 z-10 text-white/60 hover:text-white transition-colors"
         >
           <X className="size-5" />
         </button>
-        {children}
+        <div className="relative z-10 flex h-full flex-col justify-between px-4 py-6">
+          {children}
+        </div>
       </aside>
     </>
   );
