@@ -22,6 +22,12 @@ variable "project_name" {
   default     = "contextid"
 }
 
+variable "domain_name" {
+  description = "Custom domain (registered at GoDaddy) served via CloudFront in front of the contextid-web ECS Express service. See cdn.tf."
+  type        = string
+  default     = "contextid.app"
+}
+
 variable "github_repository" {
   description = "GitHub repo in \"owner/name\" form. Scopes the OIDC trust policy so only workflows from this repo can assume the deploy role."
   type        = string

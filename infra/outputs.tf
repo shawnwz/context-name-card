@@ -17,6 +17,22 @@ output "actual_urls" {
   }
 }
 
+output "cert_validation_records" {
+  description = "DNS validation records for the contextid.app ACM certificate. Add these as CNAME records at your DNS host (GoDaddy) after the first `terraform apply -target=aws_acm_certificate.web`, then re-apply."
+  value = {
+    for dvo in aws_acm_certificate.web.domain_validation_options : dvo.domain_name => {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  }
+}
+
+output "cloudfront_domain_name" {
+  description = "CloudFront distribution domain. CNAME www.<domain> to this at GoDaddy (the apex needs forwarding or a Route 53 ALIAS instead — see the comment at the top of cdn.tf)."
+  value       = aws_cloudfront_distribution.web.domain_name
+}
+
 output "ecr_web_repository_url" {
   value = aws_ecr_repository.web.repository_url
 }
