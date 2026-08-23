@@ -1,5 +1,6 @@
 import { prisma } from "@repo/database";
 import { IdentityTemplateGallery } from "./identity-template-gallery";
+import { isTemplateId, type TemplateId } from "./name-card-templates";
 
 export async function IdentityDetailPanel({
   userId,
@@ -20,6 +21,26 @@ export async function IdentityDetailPanel({
     );
   }
 
+  // Most recent still-active share per template — lets the gallery flag
+  // templates that are already shared, so a fresh Share click doesn't
+  // silently create a duplicate link for the same look.
+  const activeShares = await prisma.identityShare.findMany({
+    where: {
+      identityId: identity.id,
+      revokedAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    orderBy: { createdAt: "desc" },
+    select: { token: true, template: true },
+  });
+
+  const activeShareByTemplate: Partial<Record<TemplateId, { token: string }>> = {};
+  for (const share of activeShares) {
+    if (isTemplateId(share.template) && !activeShareByTemplate[share.template]) {
+      activeShareByTemplate[share.template] = { token: share.token };
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold">
@@ -30,7 +51,7 @@ export async function IdentityDetailPanel({
         A preview of every name-card look currently available. More
         templates are on the way.
       </p>
-      <IdentityTemplateGallery identity={identity} />
+      <IdentityTemplateGallery identity={identity} activeShareByTemplate={activeShareByTemplate} />
     </div>
   );
 }

@@ -3,10 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { prisma } from "@repo/database";
 
 const VALID_TEMPLATES = new Set([
-  "gradient",
-  "minimal",
   "professional",
-  "duotone",
   "geometric",
   "cover",
 ]);
