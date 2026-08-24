@@ -1,6 +1,11 @@
 output "web_url" {
-  description = "The configured (var.web_url) URL — should match actual_urls.web once that variable is correctly set."
+  description = "The configured (var.web_url) canonical public URL — the custom domain, used as AUTH_URL."
   value       = var.web_url
+}
+
+output "web_origin_url" {
+  description = "The configured (var.web_origin_url) AWS-assigned URL — should match actual_urls.web once that variable is correctly set."
+  value       = var.web_origin_url
 }
 
 output "api_url" {
@@ -9,7 +14,7 @@ output "api_url" {
 }
 
 output "actual_urls" {
-  description = "The real, AWS-assigned URLs read back from the services themselves. If these don't match web_url/api_url above, update var.web_url/var.api_url in terraform.tfvars (or the defaults in variables.tf) and re-apply."
+  description = "The real, AWS-assigned URLs read back from the services themselves. If actual_urls.web doesn't match web_origin_url above, update var.web_origin_url in terraform.tfvars (or the default in variables.tf) and re-apply. If actual_urls.api doesn't match api_url, same deal with var.api_url."
   value = {
     # ingress_paths[0].endpoint already includes the https:// scheme.
     web = aws_ecs_express_gateway_service.web.ingress_paths[0].endpoint

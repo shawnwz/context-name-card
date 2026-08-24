@@ -33,6 +33,22 @@ const nextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
+  experimental: {
+    // In production the app sits behind CloudFront -> ECS Express's shared
+    // ALB. CloudFront deliberately doesn't forward the real Host header to
+    // the origin (it has to send the ALB's own on.aws hostname instead, so
+    // the ALB's host-based routing works — see infra/cdn.tf), so the ALB's
+    // own x-forwarded-host ends up being that on.aws hostname rather than
+    // the custom domain the browser actually used. Next's Server Actions
+    // CSRF check compares Origin against x-forwarded-host and rejects the
+    // mismatch by default ("Invalid Server Actions request"). This is
+    // Next's own documented escape hatch for exactly that reverse-proxy
+    // scenario — it doesn't weaken the check, just trusts these origins
+    // even when the host header the proxy forwards doesn't match them.
+    serverActions: {
+      allowedOrigins: ["www.contextid.app", "contextid.app"],
+    },
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),

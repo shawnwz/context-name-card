@@ -84,7 +84,7 @@ resource "aws_cloudfront_distribution" "web" {
 
   origin {
     origin_id   = "ecs-express-web"
-    domain_name = trimprefix(var.web_url, "https://")
+    domain_name = trimprefix(var.web_origin_url, "https://")
 
     custom_origin_config {
       http_port              = 80
