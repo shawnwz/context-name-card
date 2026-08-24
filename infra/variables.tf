@@ -41,7 +41,13 @@ variable "s3_bucket_name" {
 }
 
 variable "web_url" {
-  description = "The contextid-web service's actual AWS-assigned URL (from `terraform output actual_urls` after it exists — it's a hash, not derived from service_name). Used as AUTH_URL so Auth.js builds correct OAuth callback URLs."
+  description = "The canonical public URL for the web app. Used as AUTH_URL so Auth.js builds correct OAuth callback URLs, and matches what users actually reach — the custom domain (see cdn.tf), specifically www, not the bare apex, since contextid.app only 301s to www via GoDaddy forwarding and never actually reaches this app."
+  type        = string
+  default     = "https://www.contextid.app"
+}
+
+variable "web_origin_url" {
+  description = "The contextid-web service's actual AWS-assigned URL (from `terraform output actual_urls` — it's a hash, not derived from service_name). This is CloudFront's origin in cdn.tf — deliberately a separate variable from web_url, which is the public-facing custom domain; pointing CloudFront's origin at web_url would be circular (CloudFront fronting itself)."
   type        = string
   default     = "https://co-f2332c4b2797480d98115e41e1153792.ecs.us-west-2.on.aws"
 }
