@@ -17,7 +17,7 @@ const result: NextAuthResult = NextAuth({
   providers: [
     Google({ allowDangerousEmailAccountLinking: true }),  //google and github are safe to link
     GitHub({ allowDangerousEmailAccountLinking: true }),
-    Resend({ from: 'onboarding@resend.dev' }),
+    Resend({ from: 'noreply@contextid.app' }),
   ],
   session: {
     maxAge: 5 * 60,  // expire after 5 min of inactivity
