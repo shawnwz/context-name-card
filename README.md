@@ -104,6 +104,23 @@ pnpm exec turbo dev --filter=web
 pnpm exec turbo dev --filter=web
 ```
 
+### Test
+
+Unit tests use [Vitest](https://vitest.dev) and live next to the code they cover (`*.test.ts`) in `apps/api` and `apps/web`.
+
+Run all tests:
+
+```sh
+pnpm turbo run test
+```
+
+Run tests for a single app:
+
+```sh
+pnpm --filter api test
+pnpm --filter web test
+```
+
 ### Remote Caching
 
 > [!TIP]
