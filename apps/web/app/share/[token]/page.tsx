@@ -1,16 +1,11 @@
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
+import { ShareActions } from "../../../components/share-actions";
 import { DEFAULT_TEMPLATE, TEMPLATES, isTemplateId, type NameCardIdentity } from "../../../components/name-card-templates";
-
-const API_URL = process.env.API_URL ?? "http://localhost:4000";
+import { getOrigin } from "../../../lib/get-origin";
+import { getSharedIdentity } from "../../../lib/get-shared-identity";
 
 type SharedIdentity = NameCardIdentity & { template: string };
-
-async function getSharedIdentity(token: string): Promise<SharedIdentity | null> {
-  const res = await fetch(`${API_URL}/shares/${token}`, { cache: "no-store" });
-  if (res.status === 404 || res.status === 410) return null;
-  if (!res.ok) return null;
-  return res.json();
-}
 
 export default async function SharePage({
   params,
@@ -18,12 +13,26 @@ export default async function SharePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const identity = await getSharedIdentity(token);
+  const [identity, origin] = await Promise.all([
+    getSharedIdentity<SharedIdentity>(token),
+    getOrigin(),
+  ]);
 
   if (!identity) notFound();
 
   const templateId = isTemplateId(identity.template) ? identity.template : DEFAULT_TEMPLATE;
   const { Component } = TEMPLATES[templateId];
 
-  return <Component identity={identity} />;
+  const qrDataUrl = await QRCode.toDataURL(`${origin}/share/${token}`, {
+    margin: 1,
+    width: 240,
+    color: { dark: "#4c1d95", light: "#ffffff" },
+  });
+
+  return (
+    <>
+      <Component identity={identity} />
+      <ShareActions token={token} qrDataUrl={qrDataUrl} />
+    </>
+  );
 }

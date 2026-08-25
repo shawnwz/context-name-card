@@ -9,11 +9,19 @@ export const geometricPageClass = "bg-neutral-50 dark:bg-neutral-950";
 // photo — Tailwind can't pick up a dynamically-interpolated class (its
 // scanner only sees static source text), so accent-dependent styling below
 // goes through inline `style`, not arbitrary-value classes.
-export function GeometricCard({ identity }: { identity: NameCardIdentity }) {
+export function GeometricCard({
+  identity,
+  fill = false,
+}: {
+  identity: NameCardIdentity;
+  fill?: boolean;
+}) {
   const accent = getAccentColor(identity.id);
 
   return (
-    <div className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/10 rounded-2xl p-8 shadow-2xl overflow-hidden flex flex-col items-center gap-4">
+    <div
+      className={`relative ${fill ? "w-full flex-1" : "w-full max-w-sm"} bg-white dark:bg-neutral-900 border border-black/10 dark:border-white/10 rounded-2xl p-8 shadow-2xl overflow-hidden flex flex-col items-center gap-4`}
+    >
       <svg
         aria-hidden="true"
         className="absolute -top-10 -right-16 size-56 opacity-[0.12] pointer-events-none"
@@ -87,7 +95,9 @@ export function GeometricCard({ identity }: { identity: NameCardIdentity }) {
       )}
 
       {identity.description && (
-        <p className="relative text-sm text-black/50 dark:text-white/50 text-center leading-relaxed">
+        <p
+          className={`relative text-sm text-black/50 dark:text-white/50 text-center leading-relaxed ${fill ? "mt-auto" : ""}`}
+        >
           {identity.description}
         </p>
       )}
@@ -97,8 +107,8 @@ export function GeometricCard({ identity }: { identity: NameCardIdentity }) {
 
 export function GeometricTemplate({ identity }: { identity: NameCardIdentity }) {
   return (
-    <div className={`min-h-svh ${geometricPageClass} flex items-center justify-center px-6`}>
-      <GeometricCard identity={identity} />
+    <div className={`min-h-svh ${geometricPageClass} flex flex-col px-4 pt-4 pb-24`}>
+      <GeometricCard identity={identity} fill />
     </div>
   );
 }

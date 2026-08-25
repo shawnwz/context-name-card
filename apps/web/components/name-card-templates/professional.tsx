@@ -4,9 +4,17 @@ import type { NameCardIdentity } from "./types";
 
 export const professionalPageClass = "bg-slate-950";
 
-export function ProfessionalCard({ identity }: { identity: NameCardIdentity }) {
+export function ProfessionalCard({
+  identity,
+  fill = false,
+}: {
+  identity: NameCardIdentity;
+  fill?: boolean;
+}) {
   return (
-    <div className="w-full max-w-sm bg-slate-900 border border-amber-500/20 rounded-lg p-8 shadow-2xl flex flex-col items-center gap-4">
+    <div
+      className={`${fill ? "w-full flex-1" : "w-full max-w-sm"} bg-slate-900 border border-amber-500/20 rounded-lg p-8 shadow-2xl flex flex-col items-center gap-4`}
+    >
       <div
         className="size-20 rounded-full bg-cover bg-center ring-2 ring-amber-500/40"
         style={{ backgroundImage: toCssImageUrl(getIdentityHeadImage(identity)) }}
@@ -50,7 +58,7 @@ export function ProfessionalCard({ identity }: { identity: NameCardIdentity }) {
       )}
 
       {identity.description && (
-        <p className="text-sm text-slate-400 text-center leading-relaxed italic">
+        <p className={`text-sm text-slate-400 text-center leading-relaxed italic ${fill ? "mt-auto" : ""}`}>
           {identity.description}
         </p>
       )}
@@ -60,8 +68,8 @@ export function ProfessionalCard({ identity }: { identity: NameCardIdentity }) {
 
 export function ProfessionalTemplate({ identity }: { identity: NameCardIdentity }) {
   return (
-    <div className={`min-h-svh ${professionalPageClass} flex items-center justify-center px-6`}>
-      <ProfessionalCard identity={identity} />
+    <div className={`min-h-svh ${professionalPageClass} flex flex-col px-4 pt-4 pb-24`}>
+      <ProfessionalCard identity={identity} fill />
     </div>
   );
 }
