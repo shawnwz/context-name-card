@@ -10,9 +10,17 @@ export const coverPageClass = "bg-neutral-950";
 // none was chosen) as the backdrop, with the real head image as a small
 // avatar overlaid on top — a "cover photo" card, distinct from Duotone
 // (which uses the head image itself as the whole background).
-export function CoverCard({ identity }: { identity: NameCardIdentity }) {
+export function CoverCard({
+  identity,
+  fill = false,
+}: {
+  identity: NameCardIdentity;
+  fill?: boolean;
+}) {
   return (
-    <div className="relative w-full max-w-sm aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl">
+    <div
+      className={`relative ${fill ? "w-full flex-1" : "w-full max-w-sm aspect-[3/4]"} rounded-3xl overflow-hidden shadow-2xl`}
+    >
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-cover bg-center"
@@ -78,8 +86,8 @@ export function CoverCard({ identity }: { identity: NameCardIdentity }) {
 
 export function CoverTemplate({ identity }: { identity: NameCardIdentity }) {
   return (
-    <div className={`min-h-svh ${coverPageClass} flex items-center justify-center px-6`}>
-      <CoverCard identity={identity} />
+    <div className={`min-h-svh ${coverPageClass} flex flex-col px-4 pt-4 pb-24`}>
+      <CoverCard identity={identity} fill />
     </div>
   );
 }
