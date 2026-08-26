@@ -97,7 +97,10 @@ export default async function Home({
                       : "border-black/8 dark:border-white/10"
                   }`}
                 >
-                  <Link href={`?identity=${identity.id}`} className="flex gap-3 min-w-0">
+                  <Link
+                    href={`?page=${page}&identity=${identity.id}`}
+                    className="flex gap-3 min-w-0"
+                  >
                     <div
                       aria-hidden="true"
                       className="size-10 shrink-0 rounded-full bg-cover bg-center ring-1 ring-black/10 dark:ring-white/15"
@@ -149,7 +152,7 @@ export default async function Home({
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-2">
             <Link
-              href={`?page=${page - 1}`}
+              href={`?page=${page - 1}${selectedId ? `&identity=${selectedId}` : ""}`}
               aria-disabled={page <= 1}
               className={`text-sm transition-colors ${
                 page <= 1
@@ -163,7 +166,7 @@ export default async function Home({
               Page {page} of {totalPages}
             </span>
             <Link
-              href={`?page=${page + 1}`}
+              href={`?page=${page + 1}${selectedId ? `&identity=${selectedId}` : ""}`}
               aria-disabled={page >= totalPages}
               className={`text-sm transition-colors ${
                 page >= totalPages
