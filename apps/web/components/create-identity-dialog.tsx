@@ -2,10 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, MapPin, Phone } from "lucide-react";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import { COURTESY_TITLES } from "../lib/courtesy-titles";
 import { BackgroundPicker } from "./background-picker";
+import {
+  TEMPLATES,
+  DEFAULT_TEMPLATE,
+  type TemplateId,
+  type NameCardIdentity,
+} from "./name-card-templates";
 import {
   getPlaceholderHeadImage,
   toCssImageUrl,
@@ -164,13 +169,7 @@ function ContextStep({
   );
 }
 
-// ─── Step 2: Name card (WYSIWYG) ───────────────────────────────────────────────
-
-const cardTextInputClass =
-  "bg-transparent text-center outline-none border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors w-full";
-
-const cardRowInputClass =
-  "bg-transparent outline-none border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors w-full";
+// ─── Step 2: Name card ──────────────────────────────────────────────────────
 
 function NameCardStep({
   identityId,
@@ -191,6 +190,7 @@ function NameCardStep({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateId>(DEFAULT_TEMPLATE);
 
   useEffect(() => {
     if (!file) { setPreview(null); return; }
@@ -217,24 +217,67 @@ function NameCardStep({
     onChange(next);
   }
 
+  // Feeds the live preview below — the exact same component the public
+  // share page renders for this template, so it can't drift from reality.
+  const draftIdentity: NameCardIdentity = {
+    id: identityId,
+    courtesyTitle: data.courtesyTitle || null,
+    displayName: data.displayName.trim() || "Display name",
+    image: preview,
+    background,
+    email: data.email.trim() || null,
+    description: data.description.trim() || null,
+    location: data.location.trim() || null,
+    tel: data.tel.trim() || null,
+  };
+
+  const { Card, pageClass } = TEMPLATES[previewTemplate];
+
   return (
     <div className="flex flex-col gap-5">
       <p className="text-sm text-black/50 dark:text-white/50">
-        Edit the card directly — this is exactly how it will look when shared.
+        This is exactly how the card looks when shared. The template below is
+        just a preview — you pick which one to actually share later.
       </p>
 
-      {/* WYSIWYG card, styled to match the real share card */}
-      <div className="w-full bg-gradient-to-br from-purple-950 via-purple-900 to-violet-800 rounded-3xl p-8 flex flex-col items-center gap-3 shadow-lg">
+      {/* Template switcher — preview only, doesn't set the identity's template */}
+      <div className="flex gap-1.5">
+        {(Object.keys(TEMPLATES) as TemplateId[]).map((id) => {
+          const active = id === previewTemplate;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPreviewTemplate(id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                active
+                  ? "border-black/50 dark:border-white/50 bg-black/5 dark:bg-white/5"
+                  : "border-black/10 dark:border-white/10 text-black/50 dark:text-white/50 hover:border-black/25 dark:hover:border-white/25"
+              }`}
+            >
+              {TEMPLATES[id].label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Live preview — the real template component */}
+      <div className={`rounded-2xl p-6 flex items-center justify-center ${pageClass}`}>
+        <Card identity={draftIdentity} />
+      </div>
+
+      {/* Photo */}
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="relative group cursor-pointer"
+          className="relative group cursor-pointer shrink-0"
         >
           <div
-            className="size-20 rounded-full bg-cover bg-center ring-2 ring-white/20"
+            className="size-14 rounded-full bg-cover bg-center ring-1 ring-black/10 dark:ring-white/15"
             style={{ backgroundImage: toCssImageUrl(avatarSrc) }}
           />
-          <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-medium text-center px-1">
+          <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-medium text-center px-1">
             {file ? "Change" : "Add photo"}
           </div>
         </button>
@@ -249,25 +292,39 @@ function NameCardStep({
           <button
             type="button"
             onClick={() => onFileChange(null)}
-            className="text-[11px] text-white/40 hover:text-white/70 cursor-pointer -mt-1"
+            className="text-xs text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70 cursor-pointer"
           >
             Remove photo
           </button>
         )}
+      </div>
 
-        <div className="flex items-center justify-center gap-1.5 w-full">
+      {previewTemplate === "cover" && (
+        <div>
+          <p className={labelClass}>Card background</p>
+          <BackgroundPicker value={background} onChange={onBackgroundChange} />
+        </div>
+      )}
+
+      {/* Card content */}
+      <div className="grid grid-cols-[100px_1fr] gap-3">
+        <div>
+          <label className={labelClass}>Title</label>
           <select
             value={data.courtesyTitle}
             onChange={(e) => onChange({ ...data, courtesyTitle: e.target.value })}
-            className="bg-transparent outline-none cursor-pointer border-b border-transparent hover:border-white/25 focus:border-white/40 transition-colors text-2xl font-bold text-white/70"
+            className={inputClass}
           >
-            <option value="" className="text-black">—</option>
+            <option value="">—</option>
             {COURTESY_TITLES.map((title) => (
-              <option key={title} value={title} className="text-black">
+              <option key={title} value={title}>
                 {title}
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className={labelClass}>Display name *</label>
           <input
             type="text"
             value={data.displayName}
@@ -279,57 +336,54 @@ function NameCardStep({
               })
             }
             placeholder="Display name"
-            className={`${cardTextInputClass} w-auto flex-1 text-2xl font-bold text-white placeholder:text-white/40`}
+            className={inputClass}
           />
         </div>
+      </div>
 
-        <div className="flex flex-col items-start gap-1.5 w-full -mt-1">
-          <div className="flex items-center gap-2 w-full">
-            <MapPin className="size-3.5 shrink-0 text-white/40" />
-            <input
-              type="text"
-              value={data.location}
-              onChange={(e) => onChange({ ...data, location: e.target.value })}
-              placeholder="San Francisco, CA"
-              className={`${cardRowInputClass} text-sm text-white/50 placeholder:text-white/30`}
-            />
-          </div>
+      <div>
+        <label className={labelClass}>Location</label>
+        <input
+          type="text"
+          value={data.location}
+          onChange={(e) => onChange({ ...data, location: e.target.value })}
+          placeholder="San Francisco, CA"
+          className={inputClass}
+        />
+      </div>
 
-          <div className="flex items-center gap-2 w-full">
-            <Mail className="size-3.5 shrink-0 text-white/40" />
-            <input
-              type="email"
-              value={data.email}
-              onChange={(e) => onChange({ ...data, email: e.target.value })}
-              placeholder="jane@example.com"
-              className={`${cardRowInputClass} text-sm text-white/70 placeholder:text-white/30`}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-full">
-            <Phone className="size-3.5 shrink-0 text-white/40" />
-            <input
-              type="tel"
-              value={data.tel}
-              onChange={(e) => onChange({ ...data, tel: e.target.value })}
-              placeholder="+1 555 123 4567"
-              className={`${cardRowInputClass} text-sm text-white/70 placeholder:text-white/30`}
-            />
-          </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Email</label>
+          <input
+            type="email"
+            value={data.email}
+            onChange={(e) => onChange({ ...data, email: e.target.value })}
+            placeholder="jane@example.com"
+            className={inputClass}
+          />
         </div>
+        <div>
+          <label className={labelClass}>Phone</label>
+          <input
+            type="tel"
+            value={data.tel}
+            onChange={(e) => onChange({ ...data, tel: e.target.value })}
+            placeholder="+1 555 123 4567"
+            className={inputClass}
+          />
+        </div>
+      </div>
 
+      <div>
+        <label className={labelClass}>Description</label>
         <textarea
           value={data.description}
           onChange={(e) => onChange({ ...data, description: e.target.value })}
           placeholder="A short bio or note about this identity"
           rows={2}
-          className={`${cardTextInputClass} resize-none text-sm text-white/60 placeholder:text-white/30 leading-relaxed`}
+          className={`${inputClass} resize-none`}
         />
-      </div>
-
-      <div>
-        <p className={labelClass}>Card background (used by the Cover template)</p>
-        <BackgroundPicker value={background} onChange={onBackgroundChange} />
       </div>
 
       {/* Legal name — required for the identity record, kept secondary to the card */}
@@ -576,9 +630,9 @@ export function CreateIdentityDialog({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => e.target === e.currentTarget && handleClose()}
         >
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg flex flex-col">
+          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 dark:border-white/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 dark:border-white/10 shrink-0">
               <Steps current={step} />
               <button
                 onClick={handleClose}
@@ -589,7 +643,7 @@ export function CreateIdentityDialog({
             </div>
 
             {/* Body */}
-            <div className="px-6 py-5">
+            <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">
               {step === 1 && (
                 <ContextStep
                   systemContexts={systemContexts}
@@ -618,7 +672,7 @@ export function CreateIdentityDialog({
             </div>
 
             {/* Footer */}
-            <div className="flex justify-between gap-2 px-6 py-4 border-t border-black/8 dark:border-white/10">
+            <div className="flex justify-between gap-2 px-6 py-4 border-t border-black/8 dark:border-white/10 shrink-0">
               <button
                 type="button"
                 onClick={step === 1 ? handleClose : () => setStep(1)}
