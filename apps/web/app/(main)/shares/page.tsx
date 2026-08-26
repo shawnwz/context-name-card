@@ -9,33 +9,44 @@ import { getIdentityHeadImage, toCssImageUrl } from "../../../lib/placeholder-he
 import { getOrigin } from "../../../lib/get-origin";
 import { DEFAULT_TEMPLATE, TEMPLATES, isTemplateId } from "../../../components/name-card-templates";
 
+const PAGE_SIZE = 5;
+
 export default async function SharesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ page?: string; token?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  const { token: selectedToken } = await searchParams;
+  const { page: pageParam, token: selectedToken } = await searchParams;
 
-  const [origin, shares] = await Promise.all([
+  const where = { identity: { userId: session.user.id } };
+
+  const [origin, totalCount] = await Promise.all([
     getOrigin(),
-    prisma.identityShare.findMany({
-      where: { identity: { userId: session.user.id } },
-      include: {
-        identity: {
-          select: {
-            id: true,
-            displayName: true,
-            image: true,
-            context: { select: { name: true } },
-          },
+    prisma.identityShare.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number(pageParam) || 1), totalPages);
+
+  const shares = await prisma.identityShare.findMany({
+    where,
+    include: {
+      identity: {
+        select: {
+          id: true,
+          displayName: true,
+          image: true,
+          context: { select: { name: true } },
         },
       },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+    },
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
 
   const now = new Date();
 
@@ -83,7 +94,7 @@ export default async function SharesPage({
                 >
                   {/* Stretched click target for the whole card */}
                   <Link
-                    href={`?token=${share.token}`}
+                    href={`?page=${page}&token=${share.token}`}
                     aria-label={`Preview shared link for ${share.identity.displayName}`}
                     className="absolute inset-0 rounded-xl"
                   />
@@ -151,6 +162,36 @@ export default async function SharesPage({
               );
             })}
           </ul>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <Link
+              href={`?page=${page - 1}${selectedToken ? `&token=${selectedToken}` : ""}`}
+              aria-disabled={page <= 1}
+              className={`text-sm transition-colors ${
+                page <= 1
+                  ? "text-black/25 dark:text-white/25 pointer-events-none"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              ← Previous
+            </Link>
+            <span className="text-xs text-black/40 dark:text-white/40">
+              Page {page} of {totalPages}
+            </span>
+            <Link
+              href={`?page=${page + 1}${selectedToken ? `&token=${selectedToken}` : ""}`}
+              aria-disabled={page >= totalPages}
+              className={`text-sm transition-colors ${
+                page >= totalPages
+                  ? "text-black/25 dark:text-white/25 pointer-events-none"
+                  : "text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white"
+              }`}
+            >
+              Next →
+            </Link>
+          </div>
         )}
       </div>
 
