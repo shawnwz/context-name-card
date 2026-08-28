@@ -2,10 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-export function RevokeShareButton({ token }: { token: string }) {
+type Props = { token: string; identityName?: string };
+
+export function RevokeShareButton({ token, identityName }: Props) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleRevoke() {
@@ -15,37 +28,31 @@ export function RevokeShareButton({ token }: { token: string }) {
       router.refresh();
     } else {
       setLoading(false);
-      setConfirming(false);
+      setOpen(false);
     }
   }
 
-  if (confirming) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-black/50 dark:text-white/50">Revoke?</span>
-        <button
-          onClick={handleRevoke}
-          disabled={loading}
-          className="text-xs text-red-500 dark:text-red-400 cursor-pointer hover:underline disabled:opacity-50"
-        >
-          {loading ? "Revoking…" : "Yes"}
-        </button>
-        <button
-          onClick={() => setConfirming(false)}
-          className="text-xs text-black/40 dark:text-white/40 cursor-pointer hover:underline"
-        >
-          No
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={() => setConfirming(true)}
-      className="text-xs border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 rounded-md px-2.5 py-1 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-    >
-      Revoke
-    </button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button variant="destructive" size="xs" onClick={() => setOpen(true)}>
+        Revoke
+      </Button>
+
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revoke this share link?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {identityName ? `Anyone with this link to ${identityName}` : "Anyone with this link"}{" "}
+            will immediately lose access. This can&apos;t be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" disabled={loading} onClick={handleRevoke}>
+            {loading ? "Revoking…" : "Revoke"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

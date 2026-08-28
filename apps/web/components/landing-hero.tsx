@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { LogoMark } from "./logo-mark";
 
-// The sign-in card is a server component (its forms call server actions),
-// so it's passed in as children rather than imported here — this component
-// only toggles which view is visible.
+// The sign-in card is passed in as children rather than imported here —
+// this component only toggles which view is visible.
 export function LandingHero({ children }: { children: React.ReactNode }) {
   const [showSignIn, setShowSignIn] = useState(false);
 
@@ -19,7 +18,7 @@ export function LandingHero({ children }: { children: React.ReactNode }) {
         >
           ← Back
         </button>
-        <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-xl sm:p-7">
+        <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-xl sm:max-w-md sm:p-7">
           {children}
         </div>
       </div>

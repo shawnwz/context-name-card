@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TEMPLATES, type NameCardIdentity, type TemplateId } from "./name-card-templates";
 import { ShareTemplateButton } from "./share-template-button";
+import { Badge } from "@/components/ui/badge";
 
 type Props = {
   identity: NameCardIdentity;
@@ -21,12 +22,13 @@ export function IdentityTemplateGallery({ identity, activeShareByTemplate }: Pro
                   {label}
                 </span>
                 {activeShare ? (
-                  <Link
-                    href={`/shares?token=${activeShare.token}`}
-                    className="text-xs border border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 rounded-md px-2.5 py-1 hover:bg-green-100 dark:hover:bg-green-950/60 transition-colors"
+                  <Badge
+                    variant="outline"
+                    render={<Link href={`/shares?token=${activeShare.token}`} />}
+                    className="border-green-200 dark:border-green-900 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 hover:bg-green-100 dark:hover:bg-green-950/60"
                   >
                     ✓ Shared
-                  </Link>
+                  </Badge>
                 ) : (
                   <ShareTemplateButton identityId={identity.id} templateId={id} />
                 )}
