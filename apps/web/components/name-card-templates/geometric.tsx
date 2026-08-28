@@ -58,7 +58,7 @@ export function GeometricCard({
       />
 
       <div className="relative flex flex-col items-center gap-2">
-        <h1 className="text-2xl font-bold text-black dark:text-white text-center">
+        <h1 className="text-2xl font-bold text-black dark:text-white text-center line-clamp-2">
           {identity.courtesyTitle && `${identity.courtesyTitle} `}
           {identity.displayName}
         </h1>
@@ -96,7 +96,7 @@ export function GeometricCard({
 
       {identity.description && (
         <p
-          className={`relative text-sm text-black/50 dark:text-white/50 text-center leading-relaxed ${fill ? "mt-auto" : ""}`}
+          className={`relative text-sm text-black/50 dark:text-white/50 text-center leading-relaxed line-clamp-3 ${fill ? "mt-auto" : ""}`}
         >
           {identity.description}
         </p>

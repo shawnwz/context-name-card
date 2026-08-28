@@ -21,7 +21,7 @@ export function ProfessionalCard({
       />
 
       <div className="flex flex-col items-center gap-2">
-        <h1 className="text-2xl font-bold text-white text-center tracking-wide">
+        <h1 className="text-2xl font-bold text-white text-center tracking-wide line-clamp-2">
           {identity.courtesyTitle && `${identity.courtesyTitle} `}
           {identity.displayName}
         </h1>
@@ -58,7 +58,9 @@ export function ProfessionalCard({
       )}
 
       {identity.description && (
-        <p className={`text-sm text-slate-400 text-center leading-relaxed italic ${fill ? "mt-auto" : ""}`}>
+        <p
+          className={`text-sm text-slate-400 text-center leading-relaxed italic line-clamp-3 ${fill ? "mt-auto" : ""}`}
+        >
           {identity.description}
         </p>
       )}

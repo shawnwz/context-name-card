@@ -31,15 +31,17 @@ export function CoverCard({
         className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/5"
       />
 
-      {/* Pinned independently of the text block below — its position never
-          shifts, no matter how much (or how little) contact info or bio
-          text there is. */}
-      <div
-        className="absolute top-6 left-6 size-16 rounded-full bg-cover bg-center ring-2 ring-white/80 shadow-lg"
-        style={{ backgroundImage: toCssImageUrl(getIdentityHeadImage(identity)) }}
-      />
-
       <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-3">
+        {/* Pulled up out of the content block so it overlaps the cover
+            photo above — bridges the empty gap that a top-left avatar
+            leaves in the middle of the card, and (being part of this same
+            flex column) always sits directly above the name regardless of
+            how much contact info or bio text follows. */}
+        <div
+          className="-mt-14 size-16 rounded-full bg-cover bg-center ring-2 ring-white/80 shadow-lg"
+          style={{ backgroundImage: toCssImageUrl(getIdentityHeadImage(identity)) }}
+        />
+
         <h1 className="text-2xl font-bold text-white leading-tight line-clamp-2">
           {identity.courtesyTitle && `${identity.courtesyTitle} `}
           {identity.displayName}

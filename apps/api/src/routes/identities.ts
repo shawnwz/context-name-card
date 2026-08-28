@@ -22,6 +22,51 @@ type IdentityBody = {
 
 type IdentityPatchBody = Partial<Omit<IdentityBody, "contextId">>;
 
+// Mirrored in apps/web/lib/identity-limits.ts — keep both in sync.
+const DESCRIPTION_MAX_LENGTH = 200;
+const NAME_MAX_LENGTH = 100;
+const LOCATION_MAX_LENGTH = 100;
+const EMAIL_MAX_LENGTH = 254;
+const TEL_MAX_LENGTH = 30;
+
+function validateFieldLengths(body: {
+  givenName?: string;
+  familyName?: string;
+  additionalGivenName?: string;
+  secondaryFamilyName?: string;
+  displayName?: string;
+  email?: string;
+  description?: string;
+  location?: string;
+  tel?: string;
+}): string | null {
+  const nameFields: [string, string | undefined][] = [
+    ["givenName", body.givenName],
+    ["familyName", body.familyName],
+    ["additionalGivenName", body.additionalGivenName],
+    ["secondaryFamilyName", body.secondaryFamilyName],
+    ["displayName", body.displayName],
+  ];
+  for (const [field, value] of nameFields) {
+    if (value && value.length > NAME_MAX_LENGTH) {
+      return `${field} must be at most ${NAME_MAX_LENGTH} characters`;
+    }
+  }
+  if (body.description && body.description.length > DESCRIPTION_MAX_LENGTH) {
+    return `description must be at most ${DESCRIPTION_MAX_LENGTH} characters`;
+  }
+  if (body.location && body.location.length > LOCATION_MAX_LENGTH) {
+    return `location must be at most ${LOCATION_MAX_LENGTH} characters`;
+  }
+  if (body.email && body.email.length > EMAIL_MAX_LENGTH) {
+    return `email must be at most ${EMAIL_MAX_LENGTH} characters`;
+  }
+  if (body.tel && body.tel.length > TEL_MAX_LENGTH) {
+    return `tel must be at most ${TEL_MAX_LENGTH} characters`;
+  }
+  return null;
+}
+
 const allowedHeadImageTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -79,6 +124,21 @@ export async function identityRoutes(app: FastifyInstance) {
         error:
           "contextId, validFrom, givenName, familyName, and displayName are required",
       });
+    }
+
+    const lengthError = validateFieldLengths({
+      givenName,
+      familyName,
+      additionalGivenName,
+      secondaryFamilyName,
+      displayName,
+      email,
+      description,
+      location,
+      tel,
+    });
+    if (lengthError) {
+      return reply.status(400).send({ error: lengthError });
     }
 
     try {
@@ -192,6 +252,21 @@ export async function identityRoutes(app: FastifyInstance) {
       location,
       tel,
     } = request.body;
+
+    const lengthError = validateFieldLengths({
+      givenName,
+      familyName,
+      additionalGivenName,
+      secondaryFamilyName,
+      displayName,
+      email,
+      description,
+      location,
+      tel,
+    });
+    if (lengthError) {
+      return reply.status(400).send({ error: lengthError });
+    }
 
     try {
       const identity = await prisma.identity.update({

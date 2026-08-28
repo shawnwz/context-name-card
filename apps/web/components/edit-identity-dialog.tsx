@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import { COURTESY_TITLES } from "../lib/courtesy-titles";
+import {
+  DESCRIPTION_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  LOCATION_MAX_LENGTH,
+  EMAIL_MAX_LENGTH,
+  TEL_MAX_LENGTH,
+} from "../lib/identity-limits";
 import { BackgroundPicker } from "./background-picker";
 
 export type EditableIdentity = {
@@ -153,6 +160,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       type="text"
                       required
                       defaultValue={identity.givenName}
+                      maxLength={NAME_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -163,6 +171,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       type="text"
                       required
                       defaultValue={identity.familyName}
+                      maxLength={NAME_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -172,6 +181,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       name="additionalGivenName"
                       type="text"
                       defaultValue={identity.additionalGivenName ?? ""}
+                      maxLength={NAME_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -181,6 +191,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       name="secondaryFamilyName"
                       type="text"
                       defaultValue={identity.secondaryFamilyName ?? ""}
+                      maxLength={NAME_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -209,6 +220,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       type="text"
                       required
                       defaultValue={identity.displayName}
+                      maxLength={NAME_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -244,6 +256,7 @@ export function EditIdentityDialog({ identity }: Props) {
                     type="email"
                     defaultValue={identity.email ?? ""}
                     placeholder="jane@example.com"
+                    maxLength={EMAIL_MAX_LENGTH}
                     className={inputClass}
                   />
                 </div>
@@ -255,6 +268,7 @@ export function EditIdentityDialog({ identity }: Props) {
                     defaultValue={identity.description ?? ""}
                     placeholder="A short bio or note about this identity"
                     rows={3}
+                    maxLength={DESCRIPTION_MAX_LENGTH}
                     className={`${inputClass} resize-none`}
                   />
                 </div>
@@ -267,6 +281,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       type="text"
                       defaultValue={identity.location ?? ""}
                       placeholder="San Francisco, CA"
+                      maxLength={LOCATION_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>
@@ -277,6 +292,7 @@ export function EditIdentityDialog({ identity }: Props) {
                       type="tel"
                       defaultValue={identity.tel ?? ""}
                       placeholder="+1 555 123 4567"
+                      maxLength={TEL_MAX_LENGTH}
                       className={inputClass}
                     />
                   </div>

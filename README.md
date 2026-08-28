@@ -1,369 +1,205 @@
-# Turborepo starter
+# ContextID
 
-This Turborepo starter is maintained by the Turborepo core team.
+**A context-aware digital identity management platform.**
 
-## Using this example
+ContextID lets a user hold several identity "cards" under one account — Professional, Academic, Personal, Family, or any custom context — each with its own structured name, photo, and contact details. Cards are shared as revocable, expirable links rather than a single static profile, so the owner decides exactly what a recipient sees and can take that access back at any time.
 
-Run the following command:
+This is the codebase for a University of London CM3070 final project. The accompanying report, which covers the motivation, literature review, architecture, and evaluation in depth, is in [`reports/final_report_draft.md`](reports/final_report_draft.md).
 
-```sh
-npx create-turbo@latest
+## Features
+
+- **Multiple contexts per user** — separate identity cards for different audiences, each with its own name, title, photo, background, email, phone, location, and description.
+- **Structured names** — given name, family name, additional given names, and secondary family names are stored separately, so non-Western naming orders aren't forced into a single "full name" field.
+- **Time-bounded identities** — a card can have a `validFrom`/`validTo` window so an affiliation expires on its own.
+- **Shareable, revocable links** — an identity is shared as a unique token pointing at a public, no-login-required page, rendered with a chosen name-card template. Links can be revoked or left to expire.
+- **vCard export** — recipients can save a shared card straight to their contacts as a `.vcf` file, with a QR code for quick scanning.
+- **Passwordless-friendly auth** — sign in with Google, GitHub, or a one-time email link (Resend), backed by database-persisted sessions (Auth.js v5).
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | [Next.js 16](https://nextjs.org/) (App Router), React 19, Tailwind CSS 4 |
+| API | [Fastify 5](https://fastify.dev/), TypeScript |
+| Database | PostgreSQL, accessed via [Prisma](https://www.prisma.io/) (`@repo/database`) |
+| Auth | [Auth.js v5](https://authjs.dev/) — Google, GitHub, email magic links via Resend |
+| Storage | Amazon S3 (identity photos) |
+| Monorepo tooling | [Turborepo](https://turborepo.dev/) + [pnpm](https://pnpm.io/) workspaces |
+| Testing | [Vitest](https://vitest.dev/) |
+| Infrastructure | Terraform, AWS ECS/ECR/CDN, deployed via GitHub Actions with OIDC |
+
+## Monorepo layout
+
+```
+apps/
+  api/          Fastify REST API (identities, identity contexts, shares)
+  web/          Next.js app — dashboard, wizard, and public share pages
+packages/
+  database/     Prisma schema, migrations, generated client (@repo/database)
+  eslint-config/       Shared ESLint configs
+  typescript-config/   Shared tsconfig bases
+infra/          Terraform for the AWS deployment (ECS, ECR, CDN, IAM, VPC)
+reports/        Project reports (preliminary, prototype, final draft)
 ```
 
-## What's inside?
+### `apps/api`
 
-This Turborepo includes the following packages/apps:
+A Fastify service exposing a REST API for identities, identity contexts, and shares. Session-protected routes are guarded by a `preHandler` that authenticates an Auth.js session token as a Bearer token; a small set of routes (public share pages) are open.
 
-### Apps and Packages
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/health` | Liveness check |
+| GET | `/users/:id` | — |
+| GET | `/users/:id/identities` | 🔒 |
+| POST | `/identities` | 🔒 |
+| GET | `/identities/:id` | 🔒 |
+| PATCH | `/identities/:id` | 🔒 |
+| DELETE | `/identities/:id` | 🔒 |
+| POST | `/identities/:id/head-image` | 🔒 upload profile photo to S3 |
+| GET | `/users/:id/identity-contexts` | 🔒 |
+| GET | `/identity-contexts/:id` | 🔒 |
+| PATCH | `/identity-contexts/:id` | 🔒 |
+| DELETE | `/identity-contexts/:id` | 🔒 |
+| GET | `/users/:id/shares` | 🔒 |
+| POST | `/identities/:id/shares` | 🔒 create a share link |
+| GET | `/identities/:id/shares` | 🔒 |
+| DELETE | `/shares/:token` | 🔒 revoke |
+| GET | `/shares/:token` | public — resolve a share link |
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+🔒 = requires an authenticated session.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### `apps/web`
 
-### Utilities
+The Next.js frontend: the sign-in flow, the identity/context dashboard, the create/edit identity wizard, the shares dashboard, and the public `/share/[token]` page a recipient lands on (including its vCard/QR export). API calls from the browser go through `app/api/proxy/[...path]`, which forwards to the Fastify API with the user's session attached.
 
-This Turborepo has some additional tools already setup for you:
+### `packages/database`
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+The single source of truth for the data model: `User`, `Account`, `Session` (Auth.js tables), `IdentityContext`, `Identity`, and `IdentityShare`. Both `apps/api` and `apps/web` depend on the generated Prisma client via `@repo/database`.
 
-### Build
+## Prerequisites
 
-To build all apps and packages, run the following command:
+- Node.js >= 18 (CI/deploy uses Node 22)
+- [pnpm](https://pnpm.io/) 9
+- A PostgreSQL database (a local one via Docker Compose, or a managed instance)
+- Docker, if you want to run the full stack in containers
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Getting started
+
+1. **Install dependencies**
+
+   ```sh
+   pnpm install
+   ```
+
+2. **Configure environment variables**
+
+   ```sh
+   cp .env.example .env
+   ```
+
+   Fill in `.env` at the repo root — it's shared by every app via `dotenv -e ../../.env`. You'll need:
+
+   - `DATABASE_URL` (or the `POSTGRESQL_*` parts it's composed from)
+   - `AUTH_RESEND_KEY` — passwordless email login ([Resend](https://resend.com/))
+   - `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` — [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — [GitHub OAuth Apps](https://github.com/settings/developers)
+   - `AUTH_SECRET` / `BETTER_AUTH_SECRET` — a random session secret
+   - `API_URL` — where `apps/web`'s proxy sends requests (`http://localhost:4000` locally)
+   - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME`, `S3_PUBLIC_BASE_URL` — for identity photo uploads
+
+3. **Set up the database**
+
+   ```sh
+   pnpm --filter @repo/database migrate:dev
+   ```
+
+   This applies all Prisma migrations and generates the client. See [Database workflow](#database-workflow) below for day-to-day schema changes.
+
+4. **Run the apps**
+
+   ```sh
+   pnpm dev
+   ```
+
+   This runs `turbo run dev`, starting the API on `http://localhost:4000` and the web app on `http://localhost:3000`.
+
+## Common commands
+
+Run from the repo root; `turbo` fans these out to every app/package with a matching script, respecting the dependency graph:
 
 ```sh
-cd my-turborepo
-turbo build
+pnpm dev            # start api + web in watch mode
+pnpm build          # build all apps and packages
+pnpm lint           # lint everything
+pnpm check-types    # typecheck everything
+pnpm format         # prettier --write across the repo
 ```
 
-Without global `turbo`, use your package manager:
+Scope any of these to one workspace with `--filter`:
 
 ```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+pnpm --filter web dev
+pnpm --filter api build
+turbo run lint --filter=@repo/database
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Testing
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
+Unit tests use Vitest and live next to the code they cover (`*.test.ts`) in `apps/api` and `apps/web`.
 
 ```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Test
-
-Unit tests use [Vitest](https://vitest.dev) and live next to the code they cover (`*.test.ts`) in `apps/api` and `apps/web`.
-
-Run all tests:
-
-```sh
-pnpm turbo run test
-```
-
-Run tests for a single app:
-
-```sh
-pnpm --filter api test
+pnpm turbo run test        # all apps
+pnpm --filter api test     # a single app
 pnpm --filter web test
 ```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+### Database workflow
 
 ```sh
-cd my-turborepo
-turbo login
-```
+# 1. Edit packages/database/prisma/schema.prisma
+# 2. Generate a migration from the diff
+pnpm --filter @repo/database migrate:dev
 
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
-
-
-## Database push
+# Push schema changes without creating a migration (prototyping only)
 pnpm --filter database db:push
 
-## The database migration workflow
+# Inspect data
+pnpm --filter @repo/database studio
 
-1. Edit schema.prisma (add/change models)
-2. Run migrate:dev → generates a new SQL migration file  `pnpm --filter database migrate:dev`
-3. The migration files in prisma/migrations/ are the history; the schema is the current state
+# Drop and recreate the dev database from scratch
+pnpm --filter @repo/database migrate:reset
 
-
-## To reset database
-- migrate:reset drops and recreates the DB clean (dev only)
-```
-pnpm --filter database migrate:reset
+# Re-run the seed script manually
+pnpm --filter @repo/database exec dotenv -e ../../.env -- prisma db seed
 ```
 
-## Run the db seed manually
+Migration files under `packages/database/prisma/migrations/` are the history; `schema.prisma` is the current state.
 
-```
-  pnpm --filter @repo/database exec dotenv -e ../../.env -- prisma db seed
-```
+## Running with Docker Compose
 
-## AWS Deployment
-
-`apps/web` and `apps/api` deploy as two separate containers on **Amazon ECS
-Express Mode** (AWS closed App Runner to new customers, so this is the
-replacement) — each gets its own Fargate service + ALB + auto scaling +
-a default HTTPS URL, no custom domain required.
-
-That URL is **not** derived from the service name — it's a hash AWS assigns
-at creation time (e.g. `https://co-f2332c4b2797480d98115e41e1153792.ecs.us-west-2.on.aws`),
-only knowable after the service exists. Get the real, current URLs with:
+`docker-compose.yml` builds `apps/api` and `apps/web` from their Dockerfiles and runs them alongside a local Postgres container. It reads secrets (OAuth credentials, `AUTH_RESEND_KEY`, AWS keys, …) from the root `.env`, and overrides `DATABASE_URL`/`API_URL` to point at the containers on the compose network instead of whatever's in your `.env`.
 
 ```sh
-cd infra && terraform output actual_urls
+docker compose up --build
 ```
 
-Postgres stays on the existing Aiven instance (not migrated to RDS). The S3
-bucket for identity head-images is unchanged and unmanaged by Terraform.
+This brings up:
 
-All infra is defined in `infra/` (Terraform) and deploys are automated via
-`.github/workflows/deploy-prod.yml` (GitHub Actions).
+- `postgres` — Postgres 16, exposed on host port `5433`
+- `migrate` — a one-shot job that runs `prisma migrate deploy`, then exits
+- `api` — the Fastify API on `http://localhost:4000`
+- `web` — the Next.js app on `http://localhost:3000`
 
-### 1. One-time infra setup (Terraform)
+## Deployment
 
-```sh
-cd infra
-cp terraform.tfvars.example terraform.tfvars   # fill in real DATABASE_URL / AUTH_* values
-terraform init
-terraform apply
-```
+Production deploys are triggered by pushing a `v*.*.*` tag (see [`.github/workflows/deploy-prod.yml`](.github/workflows/deploy-prod.yml)):
 
-- Uses the `wzhe-aws-amazon-com` AWS CLI profile and expects account
-  `391422395203` — both pinned explicitly in `versions.tf` (`profile` +
-  `allowed_account_ids`), so it refuses to run against the wrong
-  account/credentials regardless of any `AWS_PROFILE` set in your shell.
-- Creates: 2 ECR repos, the GitHub OIDC provider + deploy role, the ECS
-  task execution / Express infrastructure / api task IAM roles, a default
-  VPC + subnets (this account didn't have one), and the two
-  `aws_ecs_express_gateway_service` resources themselves.
-- State is local (`infra/terraform.tfstate`, gitignored) — fine for a
-  single-developer project. See the comment in `versions.tf` for how to
-  switch to an S3 backend later if that changes.
-- The services are created pointing at a public placeholder image
-  (`nginx`) since Express Mode requires *some* image to exist at creation
-  time. That placeholder can't pass health checks (wrong port) — expected,
-  and fixed by the first real deploy below. `wait_for_steady_state = false`
-  is set specifically so `terraform apply` doesn't hang waiting for it.
+1. Docker images for `web` and `api` are built and pushed to Amazon ECR.
+2. Prisma migrations are applied against the production database.
+3. The API and web ECS services are updated in turn (API first, then web), using GitHub OIDC for AWS access — no long-lived AWS credentials are stored in the repo.
 
-### 2. Wire up GitHub Actions
+The AWS infrastructure (ECS, ECR, CDN, IAM, VPC) is defined in [`infra/`](infra/) with Terraform.
 
-```sh
-cd infra
-terraform output -json github_actions_variables
-```
+## License
 
-Paste each key/value from that output into **GitHub repo → Settings →
-Secrets and variables → Actions → Variables** tab. Then add one **Secret**
-(same tab, Secrets sub-tab): `DATABASE_URL` — only the `migrate` job in the
-workflow needs it; the running services get their env vars from Terraform,
-not from GitHub.
-
-Once the services exist (after step 1), run `terraform output actual_urls`
-and:
-
-1. Set `var.web_url`/`var.api_url` in `terraform.tfvars` (or the defaults in
-   `variables.tf`) to those real values, then `terraform apply` again — the
-   services need their own real URLs as `AUTH_URL`/`API_URL` env vars, which
-   can't be known on the *first* apply (a resource can't reference its own
-   computed output within its own config).
-2. Add `<web_url>/api/auth/callback/google` and `<web_url>/api/auth/callback/github`
-   (the **web** service's URL — it's the one serving the OAuth flow, not api)
-   to the respective OAuth apps' authorized redirect URIs.
-
-### 3. Normal deploys
-
-Merge to the `prod` branch, then tag its HEAD and push the tag:
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-`.github/workflows/deploy-prod.yml` triggers on any `v*.*.*` tag push and
-runs: build + push both images to ECR → `prisma migrate deploy` against
-Aiven → deploy api, then web, via AWS's official
-`aws-actions/amazon-ecs-deploy-express-service` action (OIDC auth throughout,
-no long-lived AWS keys anywhere).
-
-### 4. First-time / manual deploy (bypassing CI)
-
-Useful right after `terraform apply` (to replace the placeholder image
-before setting up CI), or any time you want to deploy without pushing a tag.
-
-```sh
-# Authenticate docker to ECR
-aws ecr get-login-password --region us-west-2 --profile wzhe-aws-amazon-com \
-  | docker login --username AWS --password-stdin 391422395203.dkr.ecr.us-west-2.amazonaws.com
-
-# Build for linux/amd64 explicitly if you're on Apple Silicon — Fargate is amd64
-docker build --platform linux/amd64 -f apps/web/Dockerfile \
-  -t 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1 .
-docker build --platform linux/amd64 -f apps/api/Dockerfile \
-  -t 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1 .
-
-docker push 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1
-docker push 391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1
-```
-
-The AWS CLI needs to be reasonably recent — `ecs update-express-gateway-service`
-is a late-2025 addition; if `aws ecs update-express-gateway-service help`
-doesn't show it, upgrade (`pip install --upgrade awscli` in a venv works
-if you don't want to touch your system install).
-
-```sh
-export AWS_PROFILE=wzhe-aws-amazon-com
-
-# api first — web talks to it, not the other way around
-aws ecs update-express-gateway-service \
-  --service-arn arn:aws:ecs:us-west-2:391422395203:service/default/contextid-api \
-  --execution-role-arn arn:aws:iam::391422395203:role/contextid-ecs-task-execution \
-  --task-role-arn arn:aws:iam::391422395203:role/contextid-api-task \
-  --primary-container '{"image":"391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-api:manual-1","containerPort":4000}' \
-  --health-check-path "/health" \
-  --region us-west-2
-
-aws ecs update-express-gateway-service \
-  --service-arn arn:aws:ecs:us-west-2:391422395203:service/default/contextid-web \
-  --execution-role-arn arn:aws:iam::391422395203:role/contextid-ecs-task-execution \
-  --primary-container '{"image":"391422395203.dkr.ecr.us-west-2.amazonaws.com/contextid-web:manual-1","containerPort":3000}' \
-  --health-check-path "/" \
-  --region us-west-2
-```
-
-Fields you omit from `--primary-container`/other flags are left as-is
-(confirmed empirically — env vars, roles, and scaling config set by
-Terraform all survive an update that only touches the image/port).
-
-Check rollout status (Express Mode services are regular ECS services under
-the hood, so the standard ECS APIs work even on older AWS CLI versions
-that predate the Express Mode commands):
-
-```sh
-aws ecs describe-services --cluster default --services contextid-web contextid-api \
-  --region us-west-2 \
-  --query 'services[].{name:serviceName,running:runningCount,deployments:deployments[].{status:status,rolloutState:rolloutState,failedTasks:failedTasks}}'
-```
-
-`rolloutState` reaches `COMPLETED` once the new task passes ALB health
-checks and the old one has drained. A brand-new service's first real
-deploy can take a couple of minutes.
-
-### Destroying everything
-
-```sh
-cd infra
-terraform destroy
-```
-
-Known gotcha: the two ECR repos will fail to delete if they still have
-images in them (`force_delete` isn't set) — empty them first:
-
-```sh
-aws ecr batch-delete-image --repository-name contextid-web \
-  --image-ids "$(aws ecr list-images --repository-name contextid-web --query 'imageIds' --output json)"
-aws ecr batch-delete-image --repository-name contextid-api \
-  --image-ids "$(aws ecr list-images --repository-name contextid-api --query 'imageIds' --output json)"
-```
-
-`terraform destroy` does **not** touch the S3 bucket or Aiven Postgres —
-both were created outside Terraform and stay untouched.
+No license file is currently included; all rights reserved by the author unless stated otherwise.
