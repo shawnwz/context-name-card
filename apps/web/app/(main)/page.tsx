@@ -141,7 +141,10 @@ export default async function Home({
                         tel: identity.tel,
                       }}
                     />
-                    <DeleteIdentityButton identityId={identity.id} />
+                    <DeleteIdentityButton
+                      identityId={identity.id}
+                      displayName={identity.displayName}
+                    />
                   </div>
                 </li>
               );

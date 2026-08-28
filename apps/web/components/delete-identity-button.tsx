@@ -2,12 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-type Props = { identityId: string };
+type Props = { identityId: string; displayName?: string };
 
-export function DeleteIdentityButton({ identityId }: Props) {
+export function DeleteIdentityButton({ identityId, displayName }: Props) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
@@ -19,37 +30,33 @@ export function DeleteIdentityButton({ identityId }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      setConfirming(false);
+      setOpen(false);
     }
   }
 
-  if (confirming) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs text-black/50 dark:text-white/50">Sure?</span>
-        <button
-          onClick={handleDelete}
-          disabled={loading}
-          className="text-xs text-red-500 dark:text-red-400 cursor-pointer hover:underline disabled:opacity-50"
-        >
-          {loading ? "Deleting…" : "Yes"}
-        </button>
-        <button
-          onClick={() => setConfirming(false)}
-          className="text-xs text-black/40 dark:text-white/40 cursor-pointer hover:underline"
-        >
-          No
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={() => setConfirming(true)}
-      className="text-xs border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 rounded-md px-2.5 py-1 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-    >
-      Delete
-    </button>
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button variant="destructive" size="xs" onClick={() => setOpen(true)}>
+        Delete
+      </Button>
+
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            Delete {displayName ?? "this identity"}?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently deletes the identity and revokes every share link
+            created for it. This can&apos;t be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" disabled={loading} onClick={handleDelete}>
+            {loading ? "Deleting…" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

@@ -23,6 +23,22 @@ import {
   getPlaceholderHeadImage,
   toCssImageUrl,
 } from "../lib/placeholder-heads";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+} from "@/components/ui/dialog";
 
 type Context = { id: string; name: string };
 
@@ -53,10 +69,9 @@ type NamesStep = {
   validTo: string;
 };
 
-const inputClass =
-  "w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/30 dark:placeholder:text-white/30";
-
-const labelClass =
+// Small group captions that aren't a single field's <label> (e.g. "Legal
+// name" above a 2x2 grid of inputs) — real field labels use <Label>.
+const captionClass =
   "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
@@ -159,9 +174,9 @@ function ContextStep({
       </div>
 
       {data.contextId === "__new__" && (
-        <div>
-          <label className={labelClass}>Context name</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Context name</Label>
+          <Input
             autoFocus
             type="text"
             value={data.newContextName}
@@ -170,7 +185,6 @@ function ContextStep({
             }
             placeholder="e.g. Freelance, Gaming"
             maxLength={CONTEXT_NAME_MAX_LENGTH}
-            className={inputClass}
           />
         </div>
       )}
@@ -310,31 +324,35 @@ function NameCardStep({
 
       {previewTemplate === "cover" && (
         <div>
-          <p className={labelClass}>Card background</p>
+          <p className={captionClass}>Card background</p>
           <BackgroundPicker value={background} onChange={onBackgroundChange} />
         </div>
       )}
 
       {/* Card content */}
       <div className="grid grid-cols-[100px_1fr] gap-3">
-        <div>
-          <label className={labelClass}>Title</label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label>Title</Label>
+          <Select
             value={data.courtesyTitle}
-            onChange={(e) => onChange({ ...data, courtesyTitle: e.target.value })}
-            className={inputClass}
+            onValueChange={(value) => onChange({ ...data, courtesyTitle: value ?? "" })}
           >
-            <option value="">—</option>
-            {COURTESY_TITLES.map((title) => (
-              <option key={title} value={title}>
-                {title}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">—</SelectItem>
+              {COURTESY_TITLES.map((title) => (
+                <SelectItem key={title} value={title}>
+                  {title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <label className={labelClass}>Display name *</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Display name *</Label>
+          <Input
             type="text"
             value={data.displayName}
             onChange={(e) =>
@@ -346,121 +364,111 @@ function NameCardStep({
             }
             placeholder="Display name"
             maxLength={NAME_MAX_LENGTH}
-            className={inputClass}
           />
         </div>
       </div>
 
-      <div>
-        <label className={labelClass}>Location</label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label>Location</Label>
+        <Input
           type="text"
           value={data.location}
           onChange={(e) => onChange({ ...data, location: e.target.value })}
           placeholder="San Francisco, CA"
           maxLength={LOCATION_MAX_LENGTH}
-          className={inputClass}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Email</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Email</Label>
+          <Input
             type="email"
             value={data.email}
             onChange={(e) => onChange({ ...data, email: e.target.value })}
             placeholder="jane@example.com"
             maxLength={EMAIL_MAX_LENGTH}
-            className={inputClass}
           />
         </div>
-        <div>
-          <label className={labelClass}>Phone</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Phone</Label>
+          <Input
             type="tel"
             value={data.tel}
             onChange={(e) => onChange({ ...data, tel: e.target.value })}
             placeholder="+1 555 123 4567"
             maxLength={TEL_MAX_LENGTH}
-            className={inputClass}
           />
         </div>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
-          <label className={labelClass}>Description</label>
+          <Label>Description</Label>
           <span className="text-xs text-black/40 dark:text-white/40">
             {data.description.length}/{DESCRIPTION_MAX_LENGTH}
           </span>
         </div>
-        <textarea
+        <Textarea
           value={data.description}
           onChange={(e) => onChange({ ...data, description: e.target.value })}
           placeholder="A short bio or note about this identity"
           rows={2}
           maxLength={DESCRIPTION_MAX_LENGTH}
-          className={`${inputClass} resize-none`}
+          className="resize-none"
         />
       </div>
 
       {/* Legal name — required for the identity record, kept secondary to the card */}
       <div>
-        <p className={labelClass}>Legal name</p>
+        <p className={captionClass}>Legal name</p>
         <div className="grid grid-cols-2 gap-3">
-          <input
+          <Input
             type="text"
             value={data.givenName}
             onChange={(e) => set("givenName", e.target.value)}
             placeholder="Given name *"
             maxLength={NAME_MAX_LENGTH}
-            className={inputClass}
           />
-          <input
+          <Input
             type="text"
             value={data.familyName}
             onChange={(e) => set("familyName", e.target.value)}
             placeholder="Family name *"
             maxLength={NAME_MAX_LENGTH}
-            className={inputClass}
           />
-          <input
+          <Input
             type="text"
             value={data.additionalGivenName}
             onChange={(e) => set("additionalGivenName", e.target.value)}
             placeholder="Additional given name"
             maxLength={NAME_MAX_LENGTH}
-            className={inputClass}
           />
-          <input
+          <Input
             type="text"
             value={data.secondaryFamilyName}
             onChange={(e) => set("secondaryFamilyName", e.target.value)}
             placeholder="Secondary family name"
             maxLength={NAME_MAX_LENGTH}
-            className={inputClass}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Valid from *</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Valid from *</Label>
+          <Input
             type="date"
             value={data.validFrom}
             onChange={(e) => onChange({ ...data, validFrom: e.target.value })}
-            className={inputClass}
           />
         </div>
-        <div>
-          <label className={labelClass}>Valid to</label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label>Valid to</Label>
+          <Input
             type="date"
             value={data.validTo}
             onChange={(e) => onChange({ ...data, validTo: e.target.value })}
-            className={inputClass}
           />
         </div>
       </div>
@@ -640,93 +648,60 @@ export function CreateIdentityDialog({
   }
 
   return (
-    <>
-      <button
-        onClick={handleOpen}
-        className="bg-[var(--foreground)] text-[var(--background)] rounded-lg px-4 py-2 text-sm font-medium cursor-pointer hover:opacity-85 transition-opacity"
-      >
-        + Create Identity
-      </button>
+    <Dialog open={open} onOpenChange={(next) => (next ? handleOpen() : handleClose())}>
+      <Button onClick={handleOpen}>+ Create Identity</Button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => e.target === e.currentTarget && handleClose()}
-        >
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 dark:border-white/10 shrink-0">
-              <Steps current={step} />
-              <button
-                onClick={handleClose}
-                className="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xl leading-none cursor-pointer"
-              >
-                ×
-              </button>
-            </div>
+      <DialogContent className="grid-rows-[auto_1fr_auto] gap-0 p-0 sm:max-w-lg max-h-[90vh]">
+        <DialogHeader className="flex-row items-center justify-between space-y-0 border-b px-6 py-4">
+          <Steps current={step} />
+        </DialogHeader>
 
-            {/* Body */}
-            <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">
-              {step === 1 && (
-                <ContextStep
-                  systemContexts={systemContexts}
-                  userContexts={userContexts}
-                  data={contextData}
-                  onChange={setContextData}
-                />
-              )}
-              {step === 2 && (
-                <NameCardStep
-                  identityId={placeholderSeed}
-                  data={namesData}
-                  onChange={setNamesData}
-                  file={photoFile}
-                  onFileChange={setPhotoFile}
-                  background={background}
-                  onBackgroundChange={setBackground}
-                />
-              )}
+        {/* Body */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {step === 1 && (
+            <ContextStep
+              systemContexts={systemContexts}
+              userContexts={userContexts}
+              data={contextData}
+              onChange={setContextData}
+            />
+          )}
+          {step === 2 && (
+            <NameCardStep
+              identityId={placeholderSeed}
+              data={namesData}
+              onChange={setNamesData}
+              file={photoFile}
+              onFileChange={setPhotoFile}
+              background={background}
+              onBackgroundChange={setBackground}
+            />
+          )}
 
-              {error && (
-                <p className="text-sm text-red-500 dark:text-red-400 mt-4">
-                  {error}
-                </p>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-between gap-2 px-6 py-4 border-t border-black/8 dark:border-white/10 shrink-0">
-              <button
-                type="button"
-                onClick={step === 1 ? handleClose : () => setStep(1)}
-                className="px-4 py-2 text-sm rounded-lg border border-black/15 dark:border-white/15 cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
-              >
-                {step === 1 ? "Cancel" : "← Back"}
-              </button>
-
-              {step === 1 ? (
-                <button
-                  type="button"
-                  disabled={!canAdvanceStep1()}
-                  onClick={() => setStep(2)}
-                  className="px-4 py-2 text-sm rounded-lg bg-[var(--foreground)] text-[var(--background)] font-medium cursor-pointer hover:opacity-85 disabled:opacity-40 transition-opacity"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={loading || !canAdvanceStep2()}
-                  onClick={handleCreate}
-                  className="px-4 py-2 text-sm rounded-lg bg-[var(--foreground)] text-[var(--background)] font-medium cursor-pointer hover:opacity-85 disabled:opacity-50 transition-opacity"
-                >
-                  {loading ? "Creating…" : "Create"}
-                </button>
-              )}
-            </div>
-          </div>
+          {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
         </div>
-      )}
-    </>
+
+        {/* Footer */}
+        <div className="flex justify-between gap-2 border-t bg-muted/50 px-6 py-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={step === 1 ? handleClose : () => setStep(1)}
+          >
+            {step === 1 ? "Cancel" : "← Back"}
+          </Button>
+
+          {step === 1 ? (
+            <Button type="button" disabled={!canAdvanceStep1()} onClick={() => setStep(2)}>
+              Next →
+            </Button>
+          ) : (
+            <Button type="button" disabled={loading || !canAdvanceStep2()} onClick={handleCreate}>
+              {loading ? "Creating…" : "Create"}
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

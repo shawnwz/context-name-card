@@ -6,6 +6,7 @@ import { RevokeShareButton } from "./revoke-share-button";
 import { getIdentityHeadImage, toCssImageUrl } from "../lib/placeholder-heads";
 import { getOrigin } from "../lib/get-origin";
 import { DEFAULT_TEMPLATE, TEMPLATES, isTemplateId } from "./name-card-templates";
+import { Badge } from "@/components/ui/badge";
 
 export async function ShareDetailPanel({
   userId,
@@ -61,19 +62,18 @@ export async function ShareDetailPanel({
               {share.identity.courtesyTitle && `${share.identity.courtesyTitle} `}
               {share.identity.displayName}
             </h2>
-            <span className="text-xs text-black/40 dark:text-white/40 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full">
-              {share.identity.context.name}
-            </span>
+            <Badge variant="secondary">{share.identity.context.name}</Badge>
           </div>
-          <span
-            className={`w-fit text-xs px-2 py-0.5 rounded-full ${
+          <Badge
+            variant="secondary"
+            className={
               isActive
                 ? "bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400"
-                : "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40"
-            }`}
+                : ""
+            }
           >
             {status}
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -119,7 +119,9 @@ export async function ShareDetailPanel({
               />
               {label}
             </span>
-            {isActive && <RevokeShareButton token={share.token} />}
+            {isActive && (
+              <RevokeShareButton token={share.token} identityName={share.identity.displayName} />
+            )}
           </div>
 
           <span className="w-full text-xs text-black/40 dark:text-white/40">

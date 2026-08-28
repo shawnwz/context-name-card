@@ -12,6 +12,24 @@ import {
   TEL_MAX_LENGTH,
 } from "../lib/identity-limits";
 import { BackgroundPicker } from "./background-picker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export type EditableIdentity = {
   id: string;
@@ -33,12 +51,6 @@ export type EditableIdentity = {
 };
 
 type Props = { identity: EditableIdentity };
-
-const inputClass =
-  "w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/30 dark:placeholder:text-white/30";
-
-const labelClass =
-  "block text-xs font-medium text-black/60 dark:text-white/60 mb-1";
 
 function toDateInput(iso: string | null): string {
   if (!iso) return "";
@@ -118,232 +130,178 @@ export function EditIdentityDialog({ identity }: Props) {
   }
 
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="text-xs border border-black/15 dark:border-white/15 rounded-md px-2.5 py-1 cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
-      >
+    <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : handleClose())}>
+      <Button variant="outline" size="xs" onClick={() => setOpen(true)}>
         Edit
-      </button>
+      </Button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => e.target === e.currentTarget && handleClose()}
-        >
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 dark:border-white/10">
-              <div>
-                <h2 className="text-base font-semibold">Edit Identity</h2>
-                <p className="text-xs text-black/40 dark:text-white/40 mt-0.5">
-                  Context: {identity.contextName}
-                </p>
+      <DialogContent className="grid-rows-[auto_1fr] gap-0 p-0 sm:max-w-lg max-h-[90vh]">
+        <DialogHeader className="border-b px-6 py-4">
+          <DialogTitle>Edit Identity</DialogTitle>
+          <DialogDescription>Context: {identity.contextName}</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-4">
+            {/* Name fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Given name *</Label>
+                <Input
+                  name="givenName"
+                  type="text"
+                  required
+                  defaultValue={identity.givenName}
+                  maxLength={NAME_MAX_LENGTH}
+                />
               </div>
-              <button
-                onClick={handleClose}
-                className="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xl leading-none cursor-pointer"
-              >
-                ×
-              </button>
+              <div className="flex flex-col gap-1.5">
+                <Label>Family name *</Label>
+                <Input
+                  name="familyName"
+                  type="text"
+                  required
+                  defaultValue={identity.familyName}
+                  maxLength={NAME_MAX_LENGTH}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Additional given name</Label>
+                <Input
+                  name="additionalGivenName"
+                  type="text"
+                  defaultValue={identity.additionalGivenName ?? ""}
+                  maxLength={NAME_MAX_LENGTH}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Secondary family name</Label>
+                <Input
+                  name="secondaryFamilyName"
+                  type="text"
+                  defaultValue={identity.secondaryFamilyName ?? ""}
+                  maxLength={NAME_MAX_LENGTH}
+                />
+              </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="overflow-y-auto flex-1">
-              <div className="px-6 py-4 flex flex-col gap-4">
-                {/* Name fields */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Given name *</label>
-                    <input
-                      name="givenName"
-                      type="text"
-                      required
-                      defaultValue={identity.givenName}
-                      maxLength={NAME_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Family name *</label>
-                    <input
-                      name="familyName"
-                      type="text"
-                      required
-                      defaultValue={identity.familyName}
-                      maxLength={NAME_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Additional given name</label>
-                    <input
-                      name="additionalGivenName"
-                      type="text"
-                      defaultValue={identity.additionalGivenName ?? ""}
-                      maxLength={NAME_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Secondary family name</label>
-                    <input
-                      name="secondaryFamilyName"
-                      type="text"
-                      defaultValue={identity.secondaryFamilyName ?? ""}
-                      maxLength={NAME_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-[100px_1fr] gap-3">
-                  <div>
-                    <label className={labelClass}>Title</label>
-                    <select
-                      name="courtesyTitle"
-                      defaultValue={identity.courtesyTitle ?? ""}
-                      className={inputClass}
-                    >
-                      <option value="">—</option>
-                      {COURTESY_TITLES.map((title) => (
-                        <option key={title} value={title}>
-                          {title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Display name *</label>
-                    <input
-                      name="displayName"
-                      type="text"
-                      required
-                      defaultValue={identity.displayName}
-                      maxLength={NAME_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                {/* Validity */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Valid from *</label>
-                    <input
-                      name="validFrom"
-                      type="date"
-                      required
-                      defaultValue={toDateInput(identity.validFrom)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Valid to</label>
-                    <input
-                      name="validTo"
-                      type="date"
-                      defaultValue={toDateInput(identity.validTo)}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className={labelClass}>Email</label>
-                  <input
-                    name="email"
-                    type="email"
-                    defaultValue={identity.email ?? ""}
-                    placeholder="jane@example.com"
-                    maxLength={EMAIL_MAX_LENGTH}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>Description</label>
-                  <textarea
-                    name="description"
-                    defaultValue={identity.description ?? ""}
-                    placeholder="A short bio or note about this identity"
-                    rows={3}
-                    maxLength={DESCRIPTION_MAX_LENGTH}
-                    className={`${inputClass} resize-none`}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Location</label>
-                    <input
-                      name="location"
-                      type="text"
-                      defaultValue={identity.location ?? ""}
-                      placeholder="San Francisco, CA"
-                      maxLength={LOCATION_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Phone</label>
-                    <input
-                      name="tel"
-                      type="tel"
-                      defaultValue={identity.tel ?? ""}
-                      placeholder="+1 555 123 4567"
-                      maxLength={TEL_MAX_LENGTH}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-
-                {/* Image */}
-                <div>
-                  <label className={labelClass}>Head image</label>
-                  <input
-                    name="headImage"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className={labelClass}>
-                    Card background (used by the Cover template)
-                  </label>
-                  <BackgroundPicker defaultValue={identity.background} />
-                </div>
-
-                {error && (
-                  <p className="text-sm text-red-500 dark:text-red-400">
-                    {error}
-                  </p>
-                )}
+            <div className="grid grid-cols-[100px_1fr] gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Title</Label>
+                <Select name="courtesyTitle" defaultValue={identity.courtesyTitle ?? ""}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">—</SelectItem>
+                    {COURTESY_TITLES.map((title) => (
+                      <SelectItem key={title} value={title}>
+                        {title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-
-              {/* Footer */}
-              <div className="flex justify-end gap-2 px-6 py-4 border-t border-black/8 dark:border-white/10">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2 text-sm rounded-lg border border-black/15 dark:border-white/15 cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 text-sm rounded-lg bg-[var(--foreground)] text-[var(--background)] font-medium cursor-pointer hover:opacity-85 disabled:opacity-50 transition-opacity"
-                >
-                  {loading ? "Saving…" : "Save changes"}
-                </button>
+              <div className="flex flex-col gap-1.5">
+                <Label>Display name *</Label>
+                <Input
+                  name="displayName"
+                  type="text"
+                  required
+                  defaultValue={identity.displayName}
+                  maxLength={NAME_MAX_LENGTH}
+                />
               </div>
-            </form>
+            </div>
+
+            {/* Validity */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Valid from *</Label>
+                <Input
+                  name="validFrom"
+                  type="date"
+                  required
+                  defaultValue={toDateInput(identity.validFrom)}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Valid to</Label>
+                <Input name="validTo" type="date" defaultValue={toDateInput(identity.validTo)} />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Email</Label>
+              <Input
+                name="email"
+                type="email"
+                defaultValue={identity.email ?? ""}
+                placeholder="jane@example.com"
+                maxLength={EMAIL_MAX_LENGTH}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Description</Label>
+              <Textarea
+                name="description"
+                defaultValue={identity.description ?? ""}
+                placeholder="A short bio or note about this identity"
+                rows={3}
+                maxLength={DESCRIPTION_MAX_LENGTH}
+                className="resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label>Location</Label>
+                <Input
+                  name="location"
+                  type="text"
+                  defaultValue={identity.location ?? ""}
+                  placeholder="San Francisco, CA"
+                  maxLength={LOCATION_MAX_LENGTH}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Phone</Label>
+                <Input
+                  name="tel"
+                  type="tel"
+                  defaultValue={identity.tel ?? ""}
+                  placeholder="+1 555 123 4567"
+                  maxLength={TEL_MAX_LENGTH}
+                />
+              </div>
+            </div>
+
+            {/* Image */}
+            <div className="flex flex-col gap-1.5">
+              <Label>Head image</Label>
+              <Input name="headImage" type="file" accept="image/png,image/jpeg,image/webp" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>Card background (used by the Cover template)</Label>
+              <BackgroundPicker defaultValue={identity.background} />
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
-        </div>
-      )}
-    </>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-2 border-t bg-muted/50 px-6 py-4">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

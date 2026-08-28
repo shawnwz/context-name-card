@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { QrCode, UserPlus, X } from "lucide-react";
+import { QrCode, UserPlus } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export function ShareActions({ token, qrDataUrl }: { token: string; qrDataUrl: string }) {
   const [showQr, setShowQr] = useState(false);
@@ -28,35 +29,22 @@ export function ShareActions({ token, qrDataUrl }: { token: string; qrDataUrl: s
         </button>
       </div>
 
-      {showQr && (
-        <div
-          className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
-          onClick={() => setShowQr(false)}
-        >
-          <div
-            className="relative bg-white rounded-2xl p-6 pt-10 flex flex-col items-center gap-3 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowQr(false)}
-              aria-label="Close"
-              className="absolute top-3 right-3 flex items-center justify-center size-7 rounded-full text-black/50 hover:bg-black/5 transition-colors"
-            >
-              <X className="size-4" />
-            </button>
-            <Image
-              src={qrDataUrl}
-              alt="QR code linking to this shared card"
-              width={224}
-              height={224}
-              unoptimized
-              className="size-56 rounded-lg"
-            />
-            <p className="text-xs text-black/50 text-center">Scan to open this card</p>
-          </div>
-        </div>
-      )}
+      <Dialog open={showQr} onOpenChange={setShowQr}>
+        <DialogContent className="flex flex-col items-center gap-3 sm:max-w-xs">
+          <DialogTitle className="sr-only">QR code</DialogTitle>
+          <Image
+            src={qrDataUrl}
+            alt="QR code linking to this shared card"
+            width={224}
+            height={224}
+            unoptimized
+            className="size-56 rounded-lg"
+          />
+          <p className="text-xs text-muted-foreground text-center">
+            Scan to open this card
+          </p>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

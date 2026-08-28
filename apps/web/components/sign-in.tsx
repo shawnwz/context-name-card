@@ -1,34 +1,40 @@
-import { signIn } from "../auth";
-import { OAuthButton } from "./oauth-button";
+"use client";
+
+import { useState, useTransition } from "react";
+import { signInWithGoogle, signInWithGitHub, signInWithEmail } from "../lib/auth-actions";
+import { AuthSubmitButton } from "./auth-submit-button";
+import { AuthPendingState, type AuthProvider } from "./auth-pending-state";
 
 export function SignIn() {
-  return (
-    <div className="flex flex-col gap-4 w-full max-w-sm">
-      {/* Google */}
-      <form
-        action={async () => {
-          "use server";
-          await signIn("google", { redirectTo: "/" });
-        }}
-      >
-        <OAuthButton>
-          <GoogleIcon />
-          Sign in with Google
-        </OAuthButton>
-      </form>
+  const [isPending, startTransition] = useTransition();
+  const [activeProvider, setActiveProvider] = useState<AuthProvider | null>(null);
 
-      {/* GitHub */}
-      <form
-        action={async () => {
-          "use server";
-          await signIn("github", { redirectTo: "/" });
-        }}
-      >
-        <OAuthButton>
+  function submit(provider: AuthProvider, action: () => Promise<void>) {
+    setActiveProvider(provider);
+    startTransition(action);
+  }
+
+  if (isPending && activeProvider) {
+    return <AuthPendingState provider={activeProvider} />;
+  }
+
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      {/* Google + GitHub — stacked on narrow (mobile) viewports, side by
+          side once there's room, with shorter labels to match. */}
+      <div className="flex flex-col gap-4 sm:grid sm:grid-cols-2 sm:gap-3">
+        <AuthSubmitButton onClick={() => submit("google", signInWithGoogle)}>
+          <GoogleIcon />
+          <span className="sm:hidden">Sign in with Google</span>
+          <span className="hidden sm:inline">Google</span>
+        </AuthSubmitButton>
+
+        <AuthSubmitButton onClick={() => submit("github", signInWithGitHub)}>
           <GitHubIcon />
-          Sign in with GitHub
-        </OAuthButton>
-      </form>
+          <span className="sm:hidden">Sign in with GitHub</span>
+          <span className="hidden sm:inline">GitHub</span>
+        </AuthSubmitButton>
+      </div>
 
       {/* Divider */}
       <div className="flex items-center gap-3">
@@ -39,10 +45,7 @@ export function SignIn() {
 
       {/* Magic link */}
       <form
-        action={async (formData) => {
-          "use server";
-          await signIn("resend", { ...Object.fromEntries(formData), redirectTo: "/" });
-        }}
+        action={(formData) => submit("email", () => signInWithEmail(formData))}
         className="flex flex-col gap-3"
       >
         <input
@@ -52,12 +55,9 @@ export function SignIn() {
           required
           className="border border-white/15 rounded-lg px-4 py-2.5 text-sm bg-white/5 text-white outline-none focus:ring-2 focus:ring-white/25 placeholder:text-white/30"
         />
-        <button
-          type="submit"
-          className="bg-white text-purple-950 rounded-lg px-4 py-2.5 text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity"
-        >
+        <AuthSubmitButton variant="solid" type="submit">
           Sign in with Email
-        </button>
+        </AuthSubmitButton>
       </form>
     </div>
   );
