@@ -4,6 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { uploadIdentityHeadImage } from "../lib/upload-identity-head-image";
 import { COURTESY_TITLES } from "../lib/courtesy-titles";
+import {
+  DESCRIPTION_MAX_LENGTH,
+  NAME_MAX_LENGTH,
+  LOCATION_MAX_LENGTH,
+  EMAIL_MAX_LENGTH,
+  TEL_MAX_LENGTH,
+  CONTEXT_NAME_MAX_LENGTH,
+} from "../lib/identity-limits";
 import { BackgroundPicker } from "./background-picker";
 import {
   TEMPLATES,
@@ -161,6 +169,7 @@ function ContextStep({
               onChange({ ...data, newContextName: e.target.value })
             }
             placeholder="e.g. Freelance, Gaming"
+            maxLength={CONTEXT_NAME_MAX_LENGTH}
             className={inputClass}
           />
         </div>
@@ -336,6 +345,7 @@ function NameCardStep({
               })
             }
             placeholder="Display name"
+            maxLength={NAME_MAX_LENGTH}
             className={inputClass}
           />
         </div>
@@ -348,6 +358,7 @@ function NameCardStep({
           value={data.location}
           onChange={(e) => onChange({ ...data, location: e.target.value })}
           placeholder="San Francisco, CA"
+          maxLength={LOCATION_MAX_LENGTH}
           className={inputClass}
         />
       </div>
@@ -360,6 +371,7 @@ function NameCardStep({
             value={data.email}
             onChange={(e) => onChange({ ...data, email: e.target.value })}
             placeholder="jane@example.com"
+            maxLength={EMAIL_MAX_LENGTH}
             className={inputClass}
           />
         </div>
@@ -370,18 +382,25 @@ function NameCardStep({
             value={data.tel}
             onChange={(e) => onChange({ ...data, tel: e.target.value })}
             placeholder="+1 555 123 4567"
+            maxLength={TEL_MAX_LENGTH}
             className={inputClass}
           />
         </div>
       </div>
 
       <div>
-        <label className={labelClass}>Description</label>
+        <div className="flex items-baseline justify-between">
+          <label className={labelClass}>Description</label>
+          <span className="text-xs text-black/40 dark:text-white/40">
+            {data.description.length}/{DESCRIPTION_MAX_LENGTH}
+          </span>
+        </div>
         <textarea
           value={data.description}
           onChange={(e) => onChange({ ...data, description: e.target.value })}
           placeholder="A short bio or note about this identity"
           rows={2}
+          maxLength={DESCRIPTION_MAX_LENGTH}
           className={`${inputClass} resize-none`}
         />
       </div>
@@ -395,6 +414,7 @@ function NameCardStep({
             value={data.givenName}
             onChange={(e) => set("givenName", e.target.value)}
             placeholder="Given name *"
+            maxLength={NAME_MAX_LENGTH}
             className={inputClass}
           />
           <input
@@ -402,6 +422,7 @@ function NameCardStep({
             value={data.familyName}
             onChange={(e) => set("familyName", e.target.value)}
             placeholder="Family name *"
+            maxLength={NAME_MAX_LENGTH}
             className={inputClass}
           />
           <input
@@ -409,6 +430,7 @@ function NameCardStep({
             value={data.additionalGivenName}
             onChange={(e) => set("additionalGivenName", e.target.value)}
             placeholder="Additional given name"
+            maxLength={NAME_MAX_LENGTH}
             className={inputClass}
           />
           <input
@@ -416,6 +438,7 @@ function NameCardStep({
             value={data.secondaryFamilyName}
             onChange={(e) => set("secondaryFamilyName", e.target.value)}
             placeholder="Secondary family name"
+            maxLength={NAME_MAX_LENGTH}
             className={inputClass}
           />
         </div>

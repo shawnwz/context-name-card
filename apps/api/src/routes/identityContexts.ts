@@ -1,6 +1,12 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "@repo/database";
 
+// Mirrored in apps/web/lib/identity-limits.ts — keep both in sync. Also
+// enforced because `name` is part of a unique index (userId, name), and
+// Postgres errors ("index row size exceeds maximum for index") on an
+// overly large indexed value.
+const CONTEXT_NAME_MAX_LENGTH = 50;
+
 export async function identityContextRoutes(app: FastifyInstance) {
   // Create
   app.post<{
@@ -10,6 +16,12 @@ export async function identityContextRoutes(app: FastifyInstance) {
 
     if (!name) {
       return reply.status(400).send({ error: "name is required" });
+    }
+
+    if (name.length > CONTEXT_NAME_MAX_LENGTH) {
+      return reply.status(400).send({
+        error: `name must be at most ${CONTEXT_NAME_MAX_LENGTH} characters`,
+      });
     }
 
     try {
@@ -80,6 +92,12 @@ export async function identityContextRoutes(app: FastifyInstance) {
 
     if (existing.userId === null || existing.userId !== request.userId) {
       return reply.status(403).send({ error: "Forbidden" });
+    }
+
+    if (name && name.length > CONTEXT_NAME_MAX_LENGTH) {
+      return reply.status(400).send({
+        error: `name must be at most ${CONTEXT_NAME_MAX_LENGTH} characters`,
+      });
     }
 
     try {
