@@ -48,6 +48,11 @@ export default async function SharesPage({
     take: PAGE_SIZE,
   });
 
+  // Nothing explicitly selected (e.g. landing on this page fresh from the
+  // sidebar) — default to the first share on this page instead of leaving
+  // the detail column empty.
+  const effectiveSelectedToken = selectedToken ?? shares[0]?.token;
+
   const now = new Date();
 
   function statusOf(share: (typeof shares)[number]) {
@@ -81,14 +86,14 @@ export default async function SharesPage({
                 ? share.template
                 : DEFAULT_TEMPLATE;
               const template = TEMPLATES[templateId];
-              const isSelected = share.token === selectedToken;
+              const isSelected = share.token === effectiveSelectedToken;
 
               return (
                 <li
                   key={share.id}
                   className={`relative border rounded-xl p-3 flex flex-col gap-2 transition-colors ${
                     isSelected
-                      ? "border-black/30 dark:border-white/30 bg-black/[0.03] dark:bg-white/[0.04]"
+                      ? "border-violet-400 dark:border-violet-500/70 bg-violet-50 dark:bg-violet-500/10 shadow-lg shadow-violet-500/15 dark:shadow-violet-900/40"
                       : "border-black/8 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20 hover:bg-black/[0.015] dark:hover:bg-white/[0.02]"
                   }`}
                 >
@@ -203,16 +208,16 @@ export default async function SharesPage({
 
       {/* Detail column */}
       <div className="flex-1 min-w-0 sm:pl-8">
-        {selectedToken ? (
+        {effectiveSelectedToken ? (
           <Suspense
-            key={selectedToken}
+            key={effectiveSelectedToken}
             fallback={
               <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center min-h-[200px] sm:min-h-[400px]">
                 <Spinner className="h-6 w-6 text-black/30 dark:text-white/30" />
               </div>
             }
           >
-            <ShareDetailPanel userId={session.user.id} token={selectedToken} />
+            <ShareDetailPanel userId={session.user.id} token={effectiveSelectedToken} />
           </Suspense>
         ) : (
           <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[200px] sm:min-h-[400px]">

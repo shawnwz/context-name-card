@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +13,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type Props = { identityId: string; displayName?: string };
+type Props = {
+  identityId: string;
+  displayName?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
 
-export function DeleteIdentityButton({ identityId, displayName }: Props) {
+// Confirmation only — triggered from IdentityActionsMenu's dropdown item,
+// not its own button.
+export function DeleteIdentityAlert({ identityId, displayName, open, onOpenChange }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
@@ -30,16 +35,12 @@ export function DeleteIdentityButton({ identityId, displayName }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      setOpen(false);
+      onOpenChange(false);
     }
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <Button variant="destructive" size="xs" onClick={() => setOpen(true)}>
-        Delete
-      </Button>
-
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
           <AlertDialogTitle>

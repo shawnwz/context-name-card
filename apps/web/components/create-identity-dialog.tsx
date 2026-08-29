@@ -649,7 +649,7 @@ export function CreateIdentityDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? handleOpen() : handleClose())}>
-      <Button onClick={handleOpen}>+ Create Identity</Button>
+      <Button onClick={handleOpen}>+ Create identity</Button>
 
       <DialogContent className="grid-rows-[auto_1fr_auto] gap-0 p-0 sm:max-w-lg max-h-[90vh]">
         <DialogHeader className="flex-row items-center justify-between space-y-0 border-b px-6 py-4">
