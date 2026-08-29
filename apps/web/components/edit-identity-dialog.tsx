@@ -50,21 +50,25 @@ export type EditableIdentity = {
   tel: string | null;
 };
 
-type Props = { identity: EditableIdentity };
+type Props = {
+  identity: EditableIdentity;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
 
 function toDateInput(iso: string | null): string {
   if (!iso) return "";
   return iso.slice(0, 10);
 }
 
-export function EditIdentityDialog({ identity }: Props) {
+// Triggered from IdentityActionsMenu's dropdown item, not its own button.
+export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleClose() {
-    setOpen(false);
+    onOpenChange(false);
     setError(null);
   }
 
@@ -130,11 +134,7 @@ export function EditIdentityDialog({ identity }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : handleClose())}>
-      <Button variant="outline" size="xs" onClick={() => setOpen(true)}>
-        Edit
-      </Button>
-
+    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : handleClose())}>
       <DialogContent className="grid-rows-[auto_1fr] gap-0 p-0 sm:max-w-lg max-h-[90vh]">
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>Edit Identity</DialogTitle>

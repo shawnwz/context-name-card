@@ -2,8 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { auth } from "../../auth";
 import { CreateIdentityDialog } from "../../components/create-identity-dialog";
-import { EditIdentityDialog } from "../../components/edit-identity-dialog";
-import { DeleteIdentityButton } from "../../components/delete-identity-button";
+import { IdentityActionsMenu } from "../../components/identity-actions-menu";
 import { DotGridBackground } from "../../components/dot-grid-background";
 import { IdentityDetailPanel } from "../../components/identity-detail-panel";
 import { LandingHero } from "../../components/landing-hero";
@@ -67,6 +66,11 @@ export default async function Home({
     (c) => !usedContextIds.has(c.id),
   );
 
+  // Nothing explicitly selected (e.g. landing on the page fresh from the
+  // sidebar) — default to the first identity on this page instead of
+  // leaving the detail column empty.
+  const effectiveSelectedId = selectedId ?? identities[0]?.id;
+
   return (
     <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 flex flex-col sm:flex-row gap-6 sm:gap-0">
       {/* List column */}
@@ -87,19 +91,19 @@ export default async function Home({
         ) : (
           <ul className="flex flex-col gap-3">
             {identities.map((identity) => {
-              const isSelected = identity.id === selectedId;
+              const isSelected = identity.id === effectiveSelectedId;
               return (
                 <li
                   key={identity.id}
-                  className={`border rounded-xl p-3 flex flex-col gap-2 transition-colors ${
+                  className={`relative border rounded-xl p-3 flex flex-col gap-2 transition-colors ${
                     isSelected
-                      ? "border-black/30 dark:border-white/30 bg-black/[0.03] dark:bg-white/[0.04]"
+                      ? "border-violet-400 dark:border-violet-500/70 bg-violet-50 dark:bg-violet-500/10 shadow-lg shadow-violet-500/15 dark:shadow-violet-900/40"
                       : "border-black/8 dark:border-white/10"
                   }`}
                 >
                   <Link
                     href={`?page=${page}&identity=${identity.id}`}
-                    className="flex gap-3 min-w-0"
+                    className="flex gap-3 min-w-0 pr-8"
                   >
                     <div
                       aria-hidden="true"
@@ -120,8 +124,8 @@ export default async function Home({
                       </span>
                     </div>
                   </Link>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <EditIdentityDialog
+                  <div className="absolute top-2 right-2">
+                    <IdentityActionsMenu
                       identity={{
                         id: identity.id,
                         contextName: identity.context.name,
@@ -140,10 +144,6 @@ export default async function Home({
                         location: identity.location,
                         tel: identity.tel,
                       }}
-                    />
-                    <DeleteIdentityButton
-                      identityId={identity.id}
-                      displayName={identity.displayName}
                     />
                   </div>
                 </li>
@@ -191,16 +191,16 @@ export default async function Home({
 
       {/* Detail column */}
       <div className="flex-1 min-w-0 sm:pl-8">
-        {selectedId ? (
+        {effectiveSelectedId ? (
           <Suspense
-            key={selectedId}
+            key={effectiveSelectedId}
             fallback={
               <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center min-h-[200px] sm:min-h-[400px]">
                 <Spinner className="h-6 w-6 text-black/30 dark:text-white/30" />
               </div>
             }
           >
-            <IdentityDetailPanel userId={session.user.id} identityId={selectedId} />
+            <IdentityDetailPanel userId={session.user.id} identityId={effectiveSelectedId} />
           </Suspense>
         ) : (
           <div className="border border-dashed border-black/10 dark:border-white/10 rounded-2xl p-8 sm:p-16 flex items-center justify-center text-center text-sm text-black/40 dark:text-white/40 min-h-[200px] sm:min-h-[400px]">
