@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "../auth";
+import { AccountActionsMenu } from "./account-actions-menu";
 import { SidebarNavLinks } from "./sidebar-nav-links";
 import { SidebarShell } from "./sidebar-shell";
 
@@ -21,7 +22,10 @@ export async function Sidebar() {
 
       {session?.user && (
         <div className="flex flex-col gap-3 px-3">
-          <span className="text-xs text-white/50 truncate">{session.user.email}</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-white/50 truncate">{session.user.email}</span>
+            <AccountActionsMenu userId={session.user.id} email={session.user.email!} />
+          </div>
           <form
             action={async () => {
               "use server";

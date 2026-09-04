@@ -5,6 +5,7 @@ import { authenticate } from "./plugins/authenticate.js";
 import { identityContextRoutes } from "./routes/identityContexts.js";
 import { identityRoutes } from "./routes/identities.js";
 import { publicShareRoutes, shareRoutes } from "./routes/shares.js";
+import { userRoutes } from "./routes/users.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -47,6 +48,7 @@ app.register(async (protectedApp) => {
   protectedApp.register(identityContextRoutes);
   protectedApp.register(identityRoutes);
   protectedApp.register(shareRoutes);
+  protectedApp.register(userRoutes);
 });
 
 const start = async () => {
