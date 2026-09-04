@@ -14,6 +14,7 @@ This is the codebase for a University of London CM3070 final project. The accomp
 - **Shareable, revocable links** — an identity is shared as a unique token pointing at a public, no-login-required page, rendered with a chosen name-card template. Links can be revoked or left to expire.
 - **vCard export** — recipients can save a shared card straight to their contacts as a `.vcf` file, with a QR code for quick scanning.
 - **Passwordless-friendly auth** — sign in with Google, GitHub, or a one-time email link (Resend), backed by database-persisted sessions (Auth.js v5).
+- **Account deletion** — a user can permanently delete their account, every identity, every share link, and every uploaded photo, guarded by a typed-confirmation dialog. Satisfies the GDPR Article 17 right to erasure.
 
 ## Tech stack
 
@@ -50,6 +51,7 @@ A Fastify service exposing a REST API for identities, identity contexts, and sha
 |---|---|---|
 | GET | `/health` | Liveness check |
 | GET | `/users/:id` | — |
+| DELETE | `/users/:id` | 🔒 delete the account and all owned data (identities, contexts, shares, S3 photos) |
 | GET | `/users/:id/identities` | 🔒 |
 | POST | `/identities` | 🔒 |
 | GET | `/identities/:id` | 🔒 |
