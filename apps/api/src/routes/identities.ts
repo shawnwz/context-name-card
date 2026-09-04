@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { prisma } from "@repo/database";
+import { getS3Config, s3Client } from "../lib/s3.js";
 
 type IdentityBody = {
   contextId: string;
@@ -78,24 +79,6 @@ const headImageExtensionByType: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
-
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION,
-});
-
-function getS3Config() {
-  const bucket = process.env.S3_BUCKET_NAME;
-  const publicBaseUrl = process.env.S3_PUBLIC_BASE_URL;
-
-  if (!bucket || !publicBaseUrl) {
-    throw new Error("S3_BUCKET_NAME and S3_PUBLIC_BASE_URL are required");
-  }
-
-  return {
-    bucket,
-    publicBaseUrl: publicBaseUrl.replace(/\/$/, ""),
-  };
-}
 
 export async function identityRoutes(app: FastifyInstance) {
   // Create

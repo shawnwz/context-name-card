@@ -4,7 +4,7 @@ const AVATAR_COLORS = [
   "#2563EB", // blue
   "#059669", // emerald
   "#7C3AED", // violet
-  "#E11D48", // rose
+  "#F43F5E", // rose (500 — softer than the rest of the ~600 palette)
   "#D97706", // amber
   "#0891B2", // cyan
   "#475569", // slate

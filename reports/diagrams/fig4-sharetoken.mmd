@@ -1,0 +1,8 @@
+flowchart TD
+    A["GET /shares/:token"] --> B{"Token exists?"}
+    B -- no --> N["404 Not Found"]
+    B -- yes --> C{"revokedAt set?"}
+    C -- yes --> R["410 Gone"]
+    C -- no --> D{"expiresAt in the past?"}
+    D -- yes --> E["410 Gone"]
+    D -- no --> OK["200 — identity + template"]
