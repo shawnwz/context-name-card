@@ -1,0 +1,32 @@
+flowchart TB
+    Browser["Browser"]
+
+    subgraph WEB["apps/web — Next.js 16 (port 3000)"]
+        RSC["Server Components (read path)"]
+        CC["Client Components (forms, dialogs)"]
+        Proxy["/api/proxy/[...path] route handler"]
+        AuthJS["Auth.js session (HttpOnly cookie)"]
+    end
+
+    subgraph API["apps/api — Fastify v5 (port 4000)"]
+        Routes["REST routes + ownership checks"]
+    end
+
+    subgraph DATA["packages/database"]
+        Prisma["Shared Prisma client"]
+    end
+
+    PG[("PostgreSQL — Aiven")]
+    S3[("Amazon S3 — profile photos")]
+    IDP["Google / GitHub / Resend"]
+
+    Browser --> RSC
+    Browser --> CC
+    RSC --> Prisma
+    CC --> Proxy
+    Proxy -->|Bearer token| Routes
+    AuthJS -.-> Proxy
+    Routes --> Prisma
+    Prisma --> PG
+    Routes -->|signed URLs| S3
+    AuthJS <--> IDP

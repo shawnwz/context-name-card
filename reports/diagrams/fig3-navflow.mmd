@@ -1,0 +1,11 @@
+flowchart LR
+    A["Landing page"] -->|Get Started| B["Sign in\n(Google / GitHub / Email)"]
+    B --> C["Identities dashboard\n(master–detail)"]
+    C -->|+ Create Identity| D["Two-step editor:\ncontext, then card"]
+    D --> C
+    C -->|select a card| E["Template gallery\nProfessional / Geometric / Cover"]
+    E -->|Share| F["Shared links dashboard"]
+    F -->|copy link| G["Public share page\n(no login required)"]
+    G -->|Add to Contacts| H[".vcf download"]
+    G -->|scan| I["QR code"]
+    F -->|Revoke| J["Link returns 410 Gone"]

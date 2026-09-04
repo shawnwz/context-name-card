@@ -1,0 +1,28 @@
+erDiagram
+    USER ||--o{ IDENTITY : owns
+    IDENTITY_CONTEXT ||--o{ IDENTITY : tags
+    IDENTITY ||--o{ IDENTITY_SHARE : "shared via"
+
+    IDENTITY {
+        string id PK
+        string userId FK
+        string contextId FK
+        string courtesyTitle "nullable"
+        string givenName
+        string familyName
+        string displayName
+        string location "nullable"
+        string email "nullable"
+        string tel "nullable"
+        string background "nullable"
+        datetime validFrom
+        datetime validTo "nullable"
+    }
+    IDENTITY_SHARE {
+        string id PK
+        string token UK
+        string identityId FK
+        string template "professional | geometric | cover"
+        datetime expiresAt "nullable"
+        datetime revokedAt "nullable, soft-delete"
+    }
