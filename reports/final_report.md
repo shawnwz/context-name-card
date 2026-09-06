@@ -91,7 +91,7 @@ This table should not be read as ContextID being unambiguously superior — each
 
 The GDPR (Regulation (EU) 2016/679) grants a right to erasure (Article 17) and requires privacy to be considered by design and by default (Article 25). Cavoukian's (2009) earlier Privacy by Design framework argued for exactly this: that privacy should be built into a system's architecture rather than bolted on as policy afterward. ContextID's revocation mechanism follows this principle structurally — a share is revoked by setting a `revokedAt` timestamp that the resolution endpoint checks on every request, so the capacity to withdraw access exists from the moment a share is created, not as a manually operated exception process.
 
-This claim needs the same qualification given in §2.1: revocation invalidates the *token*, not the information a recipient has already viewed, copied, or memorised. Both contextual integrity and the GDPR's erasure right describe an ideal of complete withdrawal that no link-based sharing system, this one included, can fully deliver once data has left the system. ContextID's genuine contribution is making the technical act of withdrawal immediate and free of charge — a real improvement over an emailed vCard or a printed card, neither of which can be revoked at all — without overstating what that improvement achieves.
+This claim needs the same qualification given in §2.1: revocation invalidates the *token*, not the information a recipient has already viewed, copied, or memorised. Both contextual integrity and the GDPR's erasure right describe an ideal of complete withdrawal that no link-based sharing system, this one included, can fully deliver once data has left the system. ContextID's genuine contribution is making the technical act of withdrawal immediate and free of charge — a real improvement over an emailed vCard or a printed card, neither of which can be revoked at all — without overstating what that improvement achieves. Token revocation and Article 17 are distinct guarantees, though: revoking a share withdraws one link's access to data that still exists, while erasure removes the data itself. ContextID implements both — a share-level revocation as described above, and an account-level deletion (§4.9) that satisfies Article 17 directly.
 
 ## 2.7 REST APIs for Identity Management
 
@@ -145,8 +145,9 @@ This chapter adds the architecture, data-model, and interface diagrams that feed
 | FR14 | No user can read, modify, share, or delete another user's identity, context, or share record through any API route |
 | FR15 | A recipient of a shared identity can save it directly to their device's contacts (vCard) or open it by scanning a QR code, without needing an account |
 | FR16 | Every field with a length limit is enforced identically on the client and the server, so a request that bypasses the UI cannot store data the UI would have rejected |
+| FR17 | A user can permanently delete their own account, including every identity, context, and share link they own and any uploaded photos, after a typed confirmation step |
 
-FR14 remains stated explicitly, in response to the ownership-check gap fixed during the evaluation in Chapter 5; it was previously only an implicit, unguaranteed consequence of FR1. FR15 and FR16 are new, reflecting functional additions made since the draft report.
+FR14 remains stated explicitly, in response to the ownership-check gap fixed during the evaluation in Chapter 5; it was previously only an implicit, unguaranteed consequence of FR1. FR15, FR16, and FR17 are new, reflecting functional additions made since the draft report.
 
 ### Non-Functional Requirements
 
@@ -157,6 +158,8 @@ FR14 remains stated explicitly, in response to the ownership-check gap fixed dur
 **Usability:** editing shows a live, direct-manipulation preview rather than a disconnected form, and no master–detail view is left silently empty when data exists (§3.4).
 
 **Accessibility:** pages target WCAG 2.1 AA. As Chapter 5 reports honestly, this is not yet verified by audit; §3.4 and §5.6 discuss a structural mitigation adopted meanwhile.
+
+**Data protection:** a user can exercise the GDPR Article 17 right to erasure (FR17) unassisted, with no support request required; §4.9 covers the mechanism.
 
 ## 3.2 System Architecture
 
@@ -233,7 +236,7 @@ The preliminary work plan was assessed as unrealistic and lacking any account of
 
 ## 4.1 Overview
 
-The implemented system now covers every functional requirement in §3.1, including substantial work completed since the draft report: a migration to an accessible, consistent component system across every dialog and form in the application; input-validation hardening at both the client and the API; a recipient-facing contact-export and QR-sharing feature; and two fixes to the authentication flow that were found while building it, not planned in advance. This chapter covers the mechanisms judged most significant for each: ownership verification, the share-token lifecycle, per-template sharing, the component-system migration, input validation, contact export, and the authentication-flow fixes, each with the code and reasoning behind it.
+The implemented system now covers every functional requirement in §3.1, including substantial work completed since the draft report: a migration to an accessible, consistent component system across every dialog and form in the application; input-validation hardening at both the client and the API; a recipient-facing contact-export and QR-sharing feature; a full account-deletion path satisfying the GDPR right to erasure; and two fixes to the authentication flow that were found while building it, not planned in advance. This chapter covers the mechanisms judged most significant for each: ownership verification, the share-token lifecycle, per-template sharing, the component-system migration, input validation, contact export, account deletion, and the authentication-flow fixes, each with the code and reasoning behind it.
 
 ## 4.2 Ownership Verification (IDOR Protection)
 
@@ -359,7 +362,25 @@ Escaping is applied per the vCard 3.0 text-value grammar (backslashes, semicolon
 
 Auth.js's default email sign-in flow signs the user in — and consumes the one-time token — on the first `GET` request to the callback URL. Email security scanners operated by mail providers (Microsoft Safe Links, Google Safe Browsing, and similar) pre-fetch links in incoming mail before a recipient opens the message, which silently consumes the token before the genuine click ever arrives, producing a confusing "link no longer valid" error with no user-visible cause. The email now links to ContextID's own confirmation page instead of the real callback URL directly; an automated pre-fetch of that intermediate page is inert, since only an actual click through the confirmation button reaches the real, token-consuming callback. The email itself was also given a branded HTML template, matching the application's own visual identity (logo mark, accent colour) rather than Auth.js's generic default, and a shared pending-state pattern (`useTransition`, one boolean covering all three sign-in methods) now disables the other two sign-in controls the instant one is submitted, closing a genuine race window in which a user could, for instance, click GitHub while a Google sign-in redirect was still in flight.
 
-## 4.9 Visual Representation
+## 4.9 Account Deletion (GDPR Right to Erasure)
+
+GDPR Article 17 gives a data subject the right to erasure, and nothing about ContextID's data (identity cards, share links, uploaded photos) falls under an exception that would let that right be refused. `DELETE /users/:id` implements it, guarded by the same self-only ownership check as every other route (§4.2), followed by a single `prisma.user.delete()`:
+
+```ts
+// apps/api/src/routes/users.ts
+if (request.params.id !== request.userId) {
+  return reply.status(403).send({ error: "Forbidden" });
+}
+
+await prisma.user.delete({ where: { id: request.params.id } });
+await deleteUserS3Objects(app, request.params.id);
+```
+
+Every relational table cascades from `User` in the schema (`onDelete: Cascade` on `Account`, `Session`, `IdentityContext`, `Identity`, and — one hop further — `IdentityShare`), so this one call removes the account and everything under it in a single database transaction, atomically. Only after that commits does the handler best-effort delete the user's S3-stored photos, listing and batch-deleting every object under the `users/{id}/` prefix. This ordering is deliberate: the database delete is what actually removes personal data from a live, queryable system, so it happens unconditionally and first; if the S3 cleanup call then fails, the result is an orphaned object with no account left to belong to, logged for later reconciliation, rather than a half-deleted account. An asynchronous job queue was considered and rejected for this — the operation touches a handful of rows and at most a few photos, and `DeleteObjects` batches up to 1000 keys in one call, so the added infrastructure (broker, worker, retry/dead-letter handling) would not be earning its cost at this scale.
+
+On the client, deletion sits behind a stronger confirmation than the single "Delete?" alert used elsewhere (§4.5): the destructive action stays disabled until the user types their own account email into a field, and the dialog leads with an explicit, visually distinct "This cannot be undone" warning before listing what is being removed — proportionate friction for an action with no recovery path, where the identity-level confirmation (§4.5) is not. The control itself is tucked behind a small overflow menu next to the account email rather than sitting as a standing button in the sidebar, so it is reachable but not something a user brushes past on every visit.
+
+## 4.10 Visual Representation
 
 **Two-step identity editor** — every field is edited directly on the card that will be shared, not on a separate form:
 
@@ -386,7 +407,7 @@ This chapter extends the evaluation from the draft report and is deliberately mo
 
 ## 5.1 Functional Correctness
 
-All functional requirements in §3.1 were exercised manually end-to-end against the running application: sign-in via each provider, identity creation and editing through the two-step editor (§3.5), the full share lifecycle across all four reachable states (active → 200, expired → 410, revoked → 410, non-existent → 404), rendering in each of the three templates, and the vCard/QR recipient flow (§4.7). This confirms the features work as designed under normal use. It is not, by itself, regression protection, which §5.3 addresses critically.
+All functional requirements in §3.1 were exercised manually end-to-end against the running application: sign-in via each provider, identity creation and editing through the two-step editor (§3.5), the full share lifecycle across all four reachable states (active → 200, expired → 410, revoked → 410, non-existent → 404), rendering in each of the three templates, the vCard/QR recipient flow (§4.7), and account deletion (§4.9) — confirming the typed-confirmation gate blocks the action until the email matches, and that the account, its identities, its share links, and its S3 photos are all gone afterward and its share links immediately stop resolving. This confirms the features work as designed under normal use. It is not, by itself, regression protection, which §5.3 addresses critically.
 
 ## 5.2 Security: An Ownership-Check Audit, a Real Finding, and a Fix
 
