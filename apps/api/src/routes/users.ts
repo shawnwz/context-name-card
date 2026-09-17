@@ -3,7 +3,7 @@ import {
   DeleteObjectsCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
-import { prisma } from "@repo/database";
+import { Prisma, prisma } from "@repo/database";
 import { getS3Config, s3Client } from "../lib/s3.js";
 
 // Best-effort cleanup of everything uploaded for this user (currently just
@@ -61,8 +61,8 @@ export async function userRoutes(app: FastifyInstance) {
 
       try {
         await prisma.user.delete({ where: { id: request.params.id } });
-      } catch (err: any) {
-        if (err.code === "P2025") {
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
           return reply.status(404).send({ error: "User not found" });
         }
         throw err;

@@ -1,7 +1,15 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["API_URL", "AUTH_URL"],
+  "globalEnv": [
+    "API_URL",
+    "AUTH_URL",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "AWS_REGION",
+    "S3_BUCKET_NAME",
+    "S3_PUBLIC_BASE_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

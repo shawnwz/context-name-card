@@ -100,7 +100,7 @@ model Identity {
 
   courtesyTitle       String?
   givenName           String
-  familyName          String
+  familyName          String?
   additionalGivenName String?
   secondaryFamilyName String?
   displayName         String

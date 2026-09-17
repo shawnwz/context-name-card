@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { prisma } from "@repo/database";
+import { Prisma, prisma } from "@repo/database";
 
 // Mirrored in apps/web/lib/identity-limits.ts — keep both in sync. Also
 // enforced because `name` is part of a unique index (userId, name), and
@@ -29,8 +29,8 @@ export async function identityContextRoutes(app: FastifyInstance) {
         data: { name, userId: request.userId },
       });
       return reply.status(201).send(context);
-    } catch (err: any) {
-      if (err.code === "P2002") {
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
         return reply.status(409).send({ error: "Context name already exists for this user" });
       }
       throw err;
@@ -106,11 +106,11 @@ export async function identityContextRoutes(app: FastifyInstance) {
         data: { name },
       });
       return context;
-    } catch (err: any) {
-      if (err.code === "P2025") {
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
         return reply.status(404).send({ error: "IdentityContext not found" });
       }
-      if (err.code === "P2002") {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
         return reply.status(409).send({ error: "Context name already exists for this user" });
       }
       throw err;
@@ -139,8 +139,8 @@ export async function identityContextRoutes(app: FastifyInstance) {
           where: { id: request.params.id },
         });
         return reply.status(204).send();
-      } catch (err: any) {
-        if (err.code === "P2025") {
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
           return reply.status(404).send({ error: "IdentityContext not found" });
         }
         throw err;

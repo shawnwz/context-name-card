@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { prisma } from "@repo/database";
+import { Prisma, prisma } from "@repo/database";
 import { getS3Config, s3Client } from "../lib/s3.js";
 
 type IdentityBody = {
@@ -9,7 +9,7 @@ type IdentityBody = {
   validTo?: string;
   courtesyTitle?: string;
   givenName: string;
-  familyName: string;
+  familyName?: string;
   additionalGivenName?: string;
   secondaryFamilyName?: string;
   displayName: string;
@@ -102,10 +102,9 @@ export async function identityRoutes(app: FastifyInstance) {
       tel,
     } = request.body;
 
-    if (!contextId || !validFrom || !givenName || !familyName || !displayName) {
+    if (!contextId || !validFrom || !givenName || !displayName) {
       return reply.status(400).send({
-        error:
-          "contextId, validFrom, givenName, familyName, and displayName are required",
+        error: "contextId, validFrom, givenName, and displayName are required",
       });
     }
 
@@ -147,15 +146,15 @@ export async function identityRoutes(app: FastifyInstance) {
         include: { context: true },
       });
       return reply.status(201).send(identity);
-    } catch (err: any) {
-      if (err.code === "P2002") {
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
         return reply
           .status(409)
           .send({
             error: "An identity already exists for this user in this context",
           });
       }
-      if (err.code === "P2003") {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2003") {
         return reply
           .status(400)
           .send({ error: "userId or contextId does not exist" });
@@ -275,8 +274,8 @@ export async function identityRoutes(app: FastifyInstance) {
         include: { context: true },
       });
       return identity;
-    } catch (err: any) {
-      if (err.code === "P2025") {
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
         return reply.status(404).send({ error: "Identity not found" });
       }
       throw err;
@@ -363,8 +362,8 @@ export async function identityRoutes(app: FastifyInstance) {
           where: { id: request.params.id },
         });
         return reply.status(204).send();
-      } catch (err: any) {
-        if (err.code === "P2025") {
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
           return reply.status(404).send({ error: "Identity not found" });
         }
         throw err;
