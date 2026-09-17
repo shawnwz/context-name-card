@@ -9,6 +9,8 @@
 
 **Project Template:** 7 CM3035 Advanced Web Design, 7.1 Project Idea 1 — *Identity and profile management API*
 
+**Github Repository: [https://github.com/shawnwz/context-name-card](https://github.com/shawnwz/context-name-card)
+
 ---
 
 # Chapter 1: Introduction
