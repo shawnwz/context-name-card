@@ -1,7 +1,7 @@
 export type VCardIdentity = {
   courtesyTitle: string | null;
   givenName: string;
-  familyName: string;
+  familyName: string | null;
   displayName: string;
   email: string | null;
   tel: string | null;
@@ -23,7 +23,7 @@ export function buildVCard(identity: VCardIdentity): string {
   const lines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
-    `N:${escapeText(identity.familyName)};${escapeText(identity.givenName)};;;`,
+    `N:${escapeText(identity.familyName ?? "")};${escapeText(identity.givenName)};;;`,
     `FN:${escapeText(fullName)}`,
   ];
 

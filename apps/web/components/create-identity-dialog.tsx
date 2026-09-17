@@ -175,8 +175,9 @@ function ContextStep({
 
       {data.contextId === "__new__" && (
         <div className="flex flex-col gap-1.5">
-          <Label>Context name</Label>
+          <Label htmlFor="new-context-name">Context name</Label>
           <Input
+            id="new-context-name"
             autoFocus
             type="text"
             value={data.newContextName}
@@ -337,7 +338,7 @@ function NameCardStep({
             value={data.courtesyTitle}
             onValueChange={(value) => onChange({ ...data, courtesyTitle: value ?? "" })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" aria-label="Title">
               <SelectValue placeholder="—" />
             </SelectTrigger>
             <SelectContent>
@@ -351,8 +352,9 @@ function NameCardStep({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>Display name *</Label>
+          <Label htmlFor="identity-display-name">Display name *</Label>
           <Input
+            id="identity-display-name"
             type="text"
             value={data.displayName}
             onChange={(e) =>
@@ -369,8 +371,9 @@ function NameCardStep({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Location</Label>
+        <Label htmlFor="identity-location">Location</Label>
         <Input
+          id="identity-location"
           type="text"
           value={data.location}
           onChange={(e) => onChange({ ...data, location: e.target.value })}
@@ -381,8 +384,9 @@ function NameCardStep({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label>Email</Label>
+          <Label htmlFor="identity-email">Email</Label>
           <Input
+            id="identity-email"
             type="email"
             value={data.email}
             onChange={(e) => onChange({ ...data, email: e.target.value })}
@@ -391,8 +395,9 @@ function NameCardStep({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>Phone</Label>
+          <Label htmlFor="identity-tel">Phone</Label>
           <Input
+            id="identity-tel"
             type="tel"
             value={data.tel}
             onChange={(e) => onChange({ ...data, tel: e.target.value })}
@@ -404,12 +409,13 @@ function NameCardStep({
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
-          <Label>Description</Label>
+          <Label htmlFor="identity-description">Description</Label>
           <span className="text-xs text-black/40 dark:text-white/40">
             {data.description.length}/{DESCRIPTION_MAX_LENGTH}
           </span>
         </div>
         <Textarea
+          id="identity-description"
           value={data.description}
           onChange={(e) => onChange({ ...data, description: e.target.value })}
           placeholder="A short bio or note about this identity"
@@ -425,6 +431,7 @@ function NameCardStep({
         <div className="grid grid-cols-2 gap-3">
           <Input
             type="text"
+            aria-label="Given name"
             value={data.givenName}
             onChange={(e) => set("givenName", e.target.value)}
             placeholder="Given name *"
@@ -432,13 +439,15 @@ function NameCardStep({
           />
           <Input
             type="text"
+            aria-label="Family name"
             value={data.familyName}
             onChange={(e) => set("familyName", e.target.value)}
-            placeholder="Family name *"
+            placeholder="Family name (if applicable)"
             maxLength={NAME_MAX_LENGTH}
           />
           <Input
             type="text"
+            aria-label="Additional given name"
             value={data.additionalGivenName}
             onChange={(e) => set("additionalGivenName", e.target.value)}
             placeholder="Additional given name"
@@ -446,6 +455,7 @@ function NameCardStep({
           />
           <Input
             type="text"
+            aria-label="Secondary family name"
             value={data.secondaryFamilyName}
             onChange={(e) => set("secondaryFamilyName", e.target.value)}
             placeholder="Secondary family name"
@@ -456,16 +466,18 @@ function NameCardStep({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
-          <Label>Valid from *</Label>
+          <Label htmlFor="identity-valid-from">Valid from *</Label>
           <Input
+            id="identity-valid-from"
             type="date"
             value={data.validFrom}
             onChange={(e) => onChange({ ...data, validFrom: e.target.value })}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label>Valid to</Label>
+          <Label htmlFor="identity-valid-to">Valid to</Label>
           <Input
+            id="identity-valid-to"
             type="date"
             value={data.validTo}
             onChange={(e) => onChange({ ...data, validTo: e.target.value })}
@@ -557,7 +569,6 @@ export function CreateIdentityDialog({
   function canAdvanceStep2() {
     return (
       namesData.givenName.trim().length > 0 &&
-      namesData.familyName.trim().length > 0 &&
       namesData.displayName.trim().length > 0
     );
   }
@@ -596,9 +607,11 @@ export function CreateIdentityDialog({
         userId,
         contextId,
         givenName: namesData.givenName.trim(),
-        familyName: namesData.familyName.trim(),
         displayName: namesData.displayName.trim(),
         validFrom: namesData.validFrom,
+        ...(namesData.familyName.trim() && {
+          familyName: namesData.familyName.trim(),
+        }),
         ...(namesData.courtesyTitle && {
           courtesyTitle: namesData.courtesyTitle,
         }),

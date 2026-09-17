@@ -36,7 +36,7 @@ export type EditableIdentity = {
   contextName: string;
   courtesyTitle: string | null;
   givenName: string;
-  familyName: string;
+  familyName: string | null;
   additionalGivenName: string | null;
   secondaryFamilyName: string | null;
   displayName: string;
@@ -80,6 +80,7 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
     const form = new FormData(e.currentTarget);
 
     const validTo = (form.get("validTo") as string).trim();
+    const familyName = (form.get("familyName") as string).trim();
     const additionalGivenName = (form.get("additionalGivenName") as string).trim();
     const secondaryFamilyName = (form.get("secondaryFamilyName") as string).trim();
     const email = (form.get("email") as string).trim();
@@ -95,7 +96,7 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
       body: JSON.stringify({
         courtesyTitle: (form.get("courtesyTitle") as string) || null,
         givenName: (form.get("givenName") as string).trim(),
-        familyName: (form.get("familyName") as string).trim(),
+        familyName: familyName || null,
         displayName: (form.get("displayName") as string).trim(),
         validFrom: form.get("validFrom") as string,
         additionalGivenName: additionalGivenName || null,
@@ -146,8 +147,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
             {/* Name fields */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label>Given name *</Label>
+                <Label htmlFor="edit-given-name">Given name *</Label>
                 <Input
+                  id="edit-given-name"
                   name="givenName"
                   type="text"
                   required
@@ -156,18 +158,19 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Family name *</Label>
+                <Label htmlFor="edit-family-name">Family name</Label>
                 <Input
+                  id="edit-family-name"
                   name="familyName"
                   type="text"
-                  required
-                  defaultValue={identity.familyName}
+                  defaultValue={identity.familyName ?? ""}
                   maxLength={NAME_MAX_LENGTH}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Additional given name</Label>
+                <Label htmlFor="edit-additional-given-name">Additional given name</Label>
                 <Input
+                  id="edit-additional-given-name"
                   name="additionalGivenName"
                   type="text"
                   defaultValue={identity.additionalGivenName ?? ""}
@@ -175,8 +178,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Secondary family name</Label>
+                <Label htmlFor="edit-secondary-family-name">Secondary family name</Label>
                 <Input
+                  id="edit-secondary-family-name"
                   name="secondaryFamilyName"
                   type="text"
                   defaultValue={identity.secondaryFamilyName ?? ""}
@@ -189,7 +193,7 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
               <div className="flex flex-col gap-1.5">
                 <Label>Title</Label>
                 <Select name="courtesyTitle" defaultValue={identity.courtesyTitle ?? ""}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" aria-label="Title">
                     <SelectValue placeholder="—" />
                   </SelectTrigger>
                   <SelectContent>
@@ -203,8 +207,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Display name *</Label>
+                <Label htmlFor="edit-display-name">Display name *</Label>
                 <Input
+                  id="edit-display-name"
                   name="displayName"
                   type="text"
                   required
@@ -217,8 +222,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
             {/* Validity */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label>Valid from *</Label>
+                <Label htmlFor="edit-valid-from">Valid from *</Label>
                 <Input
+                  id="edit-valid-from"
                   name="validFrom"
                   type="date"
                   required
@@ -226,14 +232,15 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Valid to</Label>
-                <Input name="validTo" type="date" defaultValue={toDateInput(identity.validTo)} />
+                <Label htmlFor="edit-valid-to">Valid to</Label>
+                <Input id="edit-valid-to" name="validTo" type="date" defaultValue={toDateInput(identity.validTo)} />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Email</Label>
+              <Label htmlFor="edit-email">Email</Label>
               <Input
+                id="edit-email"
                 name="email"
                 type="email"
                 defaultValue={identity.email ?? ""}
@@ -243,8 +250,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label>Description</Label>
+              <Label htmlFor="edit-description">Description</Label>
               <Textarea
+                id="edit-description"
                 name="description"
                 defaultValue={identity.description ?? ""}
                 placeholder="A short bio or note about this identity"
@@ -256,8 +264,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <Label>Location</Label>
+                <Label htmlFor="edit-location">Location</Label>
                 <Input
+                  id="edit-location"
                   name="location"
                   type="text"
                   defaultValue={identity.location ?? ""}
@@ -266,8 +275,9 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label>Phone</Label>
+                <Label htmlFor="edit-tel">Phone</Label>
                 <Input
+                  id="edit-tel"
                   name="tel"
                   type="tel"
                   defaultValue={identity.tel ?? ""}
@@ -279,8 +289,8 @@ export function EditIdentityDialog({ identity, open, onOpenChange }: Props) {
 
             {/* Image */}
             <div className="flex flex-col gap-1.5">
-              <Label>Head image</Label>
-              <Input name="headImage" type="file" accept="image/png,image/jpeg,image/webp" />
+              <Label htmlFor="edit-head-image">Head image</Label>
+              <Input id="edit-head-image" name="headImage" type="file" accept="image/png,image/jpeg,image/webp" />
             </div>
 
             <div className="flex flex-col gap-1.5">

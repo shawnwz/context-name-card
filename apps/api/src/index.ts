@@ -1,6 +1,5 @@
 import Fastify from "fastify";
 import multipart from "@fastify/multipart";
-import { prisma } from "@repo/database";
 import { authenticate } from "./plugins/authenticate.js";
 import { identityContextRoutes } from "./routes/identityContexts.js";
 import { identityRoutes } from "./routes/identities.js";
@@ -28,18 +27,6 @@ app.register(publicShareRoutes);
 
 app.get("/health", async () => {
   return { status: "ok" };
-});
-
-app.get<{ Params: { id: string } }>("/users/:id", async (request, reply) => {
-  const user = await prisma.user.findUnique({
-    where: { id: request.params.id },
-  });
-
-  if (!user) {
-    return reply.status(404).send({ error: "User not found" });
-  }
-
-  return user;
 });
 
 // Protected routes — require a valid Auth.js session token as Bearer token
