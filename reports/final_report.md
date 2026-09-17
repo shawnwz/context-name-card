@@ -269,7 +269,7 @@ This pattern — fetch just the owner column, compare against `request.userId` (
 
 Share tokens are generated with `randomBytes(9).toString("base64url")` — 72 bits of entropy, above the 64-bit OWASP baseline (§2.9). The public resolution endpoint evaluates a token through an ordered check, returning a distinct status per outcome so a recipient can distinguish "never existed" from "deliberately withdrawn":
 
-![Share-token resolution: an ordered check returning a distinct status per outcome](assets/fig4-sharetoken.png)
+<p align="center"><img src="assets/fig4-sharetoken.png" alt="Share-token resolution: an ordered check returning a distinct status per outcome" style="max-height: 24cm; width: auto;" /></p>
 
 This is verified by four unit tests in `apps/api/src/routes/shares.test.ts`, each asserting one branch of the diagram above against a mocked Prisma client.
 
@@ -404,7 +404,7 @@ On the client, deletion sits behind a stronger confirmation than the single "Del
 
 **Public share page** — the unauthenticated recipient's view, rendered in the template chosen at share time:
 
-![Public share page rendered in the selected template, with Add to Contacts and QR sharing](assets/public-share-page-v2.jpg)
+<p align="center"><img src="assets/public-share-page-v2.jpg" alt="Public share page rendered in the selected template, with Add to Contacts and QR sharing" style="max-height: 14cm; width: auto;" /></p>
 
 ---
 
