@@ -13,12 +13,13 @@ export async function GET(
     return NextResponse.json({ error: "Share not found" }, { status: 404 });
   }
 
-  const filename = identity.displayName.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "contact";
+  const rawName = identity.displayName.replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "contact";
+  const asciiName = rawName.replace(/[^\x20-\x7E]/g, "") || "contact";
 
   return new NextResponse(buildVCard(identity), {
     headers: {
       "Content-Type": "text/vcard; charset=utf-8",
-      "Content-Disposition": `inline; filename="${filename}.vcf"`,
+      "Content-Disposition": `inline; filename="${asciiName}.vcf"; filename*=UTF-8''${encodeURIComponent(rawName)}.vcf`,
     },
   });
 }
