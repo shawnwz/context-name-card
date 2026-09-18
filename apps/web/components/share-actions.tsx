@@ -13,7 +13,6 @@ export function ShareActions({ token, qrDataUrl }: { token: string; qrDataUrl: s
       <div className="fixed bottom-6 inset-x-0 z-10 flex items-center justify-center gap-3 px-6">
         <a
           href={`/share/${token}/vcard`}
-          download
           className="flex items-center gap-2 rounded-full bg-white/95 dark:bg-neutral-900/95 backdrop-blur px-5 py-2.5 text-sm font-medium text-black dark:text-white shadow-lg border border-black/10 dark:border-white/15 hover:bg-white dark:hover:bg-neutral-900 transition-colors"
         >
           <UserPlus className="size-4" />
