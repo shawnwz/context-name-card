@@ -4,17 +4,18 @@
 
 ContextID lets a user hold several identity "cards" under one account — Professional, Academic, Personal, Family, or any custom context — each with its own structured name, photo, and contact details. Cards are shared as revocable, expirable links rather than a single static profile, so the owner decides exactly what a recipient sees and can take that access back at any time.
 
-This is the codebase for a University of London CM3070 final project. The accompanying report, which covers the motivation, literature review, architecture, and evaluation in depth, is in [`reports/final_report_draft.md`](reports/final_report_draft.md).
+This is the codebase for a University of London CM3070 final project. The accompanying report, which covers the motivation, literature review, architecture, and evaluation in depth, is in [`reports/final_report.md`](reports/final_report.md) (also available as [`reports/final_report.pdf`](reports/final_report.pdf)).
 
 ## Features
 
 - **Multiple contexts per user** — separate identity cards for different audiences, each with its own name, title, photo, background, email, phone, location, and description.
-- **Structured names** — given name, family name, additional given names, and secondary family names are stored separately, so non-Western naming orders aren't forced into a single "full name" field.
+- **Structured names** — given name (required), family name, additional given names, and secondary family names are stored separately, so non-Western naming orders aren't forced into a single "full name" field.
 - **Time-bounded identities** — a card can have a `validFrom`/`validTo` window so an affiliation expires on its own.
 - **Shareable, revocable links** — an identity is shared as a unique token pointing at a public, no-login-required page, rendered with a chosen name-card template. Links can be revoked or left to expire.
 - **vCard export** — recipients can save a shared card straight to their contacts as a `.vcf` file, with a QR code for quick scanning.
 - **Passwordless-friendly auth** — sign in with Google, GitHub, or a one-time email link (Resend), backed by database-persisted sessions (Auth.js v5).
 - **Account deletion** — a user can permanently delete their account, every identity, every share link, and every uploaded photo, guarded by a typed-confirmation dialog. Satisfies the GDPR Article 17 right to erasure.
+- **Light/dark/system theme** — a per-viewer theme toggle in the account menu, applied before first paint to avoid a flash of the wrong theme, plus a collapsible sidebar.
 
 ## Tech stack
 
@@ -50,7 +51,6 @@ A Fastify service exposing a REST API for identities, identity contexts, and sha
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/health` | Liveness check |
-| GET | `/users/:id` | — |
 | DELETE | `/users/:id` | 🔒 delete the account and all owned data (identities, contexts, shares, S3 photos) |
 | GET | `/users/:id/identities` | 🔒 |
 | POST | `/identities` | 🔒 |
@@ -134,6 +134,7 @@ pnpm dev            # start api + web in watch mode
 pnpm build          # build all apps and packages
 pnpm lint           # lint everything
 pnpm check-types    # typecheck everything
+pnpm test           # test everything
 pnpm format         # prettier --write across the repo
 ```
 
@@ -150,7 +151,7 @@ turbo run lint --filter=@repo/database
 Unit tests use Vitest and live next to the code they cover (`*.test.ts`) in `apps/api` and `apps/web`.
 
 ```sh
-pnpm turbo run test        # all apps
+pnpm test                  # all apps
 pnpm --filter api test     # a single app
 pnpm --filter web test
 ```
@@ -192,7 +193,9 @@ This brings up:
 - `api` — the Fastify API on `http://localhost:4000`
 - `web` — the Next.js app on `http://localhost:3000`
 
-## Deployment
+## CI/CD
+
+Every pull request and push to `main` runs lint, typecheck, and the full test suite (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 Production deploys are triggered by pushing a `v*.*.*` tag (see [`.github/workflows/deploy-prod.yml`](.github/workflows/deploy-prod.yml)):
 

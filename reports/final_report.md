@@ -3,11 +3,13 @@
 
 **Student:** Zhe Wang
 
-**Date:** August 2026
+**Date:** September 2026
 
 **Live deployment:** [https://www.contextid.app/](https://www.contextid.app/)
 
-**Project Template:** 7 CM3035 Advanced Web Development, 7.1 Project Idea 1 — *Identity and profile management API*
+**Project Template:** 7 CM3035 Advanced Web Design, 7.1 Project Idea 1 — *Identity and profile management API*
+
+**Github Repository: [https://github.com/shawnwz/context-name-card](https://github.com/shawnwz/context-name-card)
 
 ---
 
@@ -29,7 +31,7 @@ The system targets people with no particular technical background. Creating an i
 
 ## 1.3 Project Template
 
-This project is based on Project Template 7, CM3035 Advanced Web Development, Project Idea 7.1 — Identity and profile management API. Course materials on secure account management and REST API design (CM3035 Advanced Web Development, University of London) directly informed the security and API-design decisions discussed in §2.9 and §2.10. The brief asks for a web application built around a REST API, where users can manage their identity and profile information and have control over what information they share with other people. ContextID follows this idea by providing a full-stack application with a Fastify REST API, a PostgreSQL database using Prisma, and a Next.js client that communicates with the API. The project also covers the deployment process and requirements analysis.
+This project is based on Project Template 7, CM3035 Advanced Web Design, Project Idea 7.1 — Identity and profile management API. Course materials on secure account management and REST API design (CM3035 Advanced Web Design, University of London) directly informed the security and API-design decisions discussed in §2.9 and §2.10. The brief asks for a web application built around a REST API, where users can manage their identity and profile information and have control over what information they share with other people. ContextID follows this idea by providing a full-stack application with a Fastify REST API, a PostgreSQL database using Prisma, and a Next.js client that communicates with the API. The project also covers the deployment process and requirements analysis.
 ## 1.4 Technical Approach
 
 The system is a TypeScript monorepo managed with Turborepo and pnpm: a Next.js 16 frontend using the App Router, and a Fastify v5 REST API, both reading and writing through a single Prisma schema and client against a shared PostgreSQL database. Profile photographs are stored in Amazon S3. Authentication is handled by Auth.js v5, supporting Google OAuth, GitHub OAuth, and passwordless email sign-in through Resend, with sessions persisted server-side in the database rather than trusted from a signed cookie alone.
@@ -191,7 +193,10 @@ The domain schema has five core tables, extended since the preliminary report wi
 - **IdentityShare** — the share record, carrying both *which* identity is shared and *which visual template* it should render in, decoupling the owner's presentation choice from any single recipient's view
 - **Account / Session / Authenticator / VerificationToken** — Auth.js adapter tables
 
-![Entity-relationship diagram of the core domain schema](assets/fig2-erd.png)
+<div class="page"></div>
+
+<p align="center"><img src="assets/fig2-erd.png" alt="Entity-relationship diagram of the core domain schema" style="max-height: 24cm; width: auto;" /></p>
+
 *Figure 2 — Entity-relationship diagram of the core domain schema.*
 
 ## 3.4 Interface and Navigation Design
@@ -266,7 +271,7 @@ This pattern — fetch just the owner column, compare against `request.userId` (
 
 Share tokens are generated with `randomBytes(9).toString("base64url")` — 72 bits of entropy, above the 64-bit OWASP baseline (§2.9). The public resolution endpoint evaluates a token through an ordered check, returning a distinct status per outcome so a recipient can distinguish "never existed" from "deliberately withdrawn":
 
-![Share-token resolution: an ordered check returning a distinct status per outcome](assets/fig4-sharetoken.png)
+<p align="center"><img src="assets/fig4-sharetoken.png" alt="Share-token resolution: an ordered check returning a distinct status per outcome" style="max-height: 24cm; width: auto;" /></p>
 
 This is verified by four unit tests in `apps/api/src/routes/shares.test.ts`, each asserting one branch of the diagram above against a mocked Prisma client.
 
@@ -401,7 +406,7 @@ On the client, deletion sits behind a stronger confirmation than the single "Del
 
 **Public share page** — the unauthenticated recipient's view, rendered in the template chosen at share time:
 
-![Public share page rendered in the selected template, with Add to Contacts and QR sharing](assets/public-share-page-v2.jpg)
+<p align="center"><img src="assets/public-share-page-v2.jpg" alt="Public share page rendered in the selected template, with Add to Contacts and QR sharing" style="max-height: 14cm; width: auto;" /></p>
 
 ---
 
@@ -509,7 +514,7 @@ The system built so far demonstrates that contextual, revocable identity sharing
 - Allen, C. (2016) *The Path to Self-Sovereign Identity*. Life With Alacrity. Available at: http://www.lifewithalacrity.com/2016/04/the-path-to-self-soverereign-identity.html
 - Cameron, K. (2005) *The Laws of Identity*. Microsoft Corporation. Available at: https://www.identityblog.com/stories/2005/05/13/TheLawsOfIdentity.pdf
 - Cavoukian, A. (2009) *Privacy by Design: The 7 Foundational Principles*. Information and Privacy Commissioner of Ontario, Canada.
-- CM3035 Advanced Web Development. Course materials on secure account management and REST API design. University of London.
+- CM3035 Advanced Web Design. Course materials on secure account management and REST API design. University of London.
 - Fielding, R.T. (2000) *Architectural Styles and the Design of Network-based Software Architectures*. PhD dissertation. University of California, Irvine. Available at: https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
 - Ishida, R. (2011) *Personal names around the world*. W3C Internationalization. Available at: https://www.w3.org/International/questions/qa-personal-names
 - ISO/IEC 24760-1:2019. *Information technology — Security techniques — A framework for identity management — Part 1: Terminology and concepts*. International Organization for Standardization.
